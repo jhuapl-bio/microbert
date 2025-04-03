@@ -1,0 +1,10 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_sample.csv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_sample.csv
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-S
+base_model_name: zhihan1996/DNABERT-S
+train_batch_size: 4
+eval_batch_size: 64
+learning_rate: 2.5e-05
+# Directories
+experiment_name: bertax/dnabert_sample

@@ -1,0 +1,10 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_substratified.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: NT
+tokenizer_name: InstaDeepAI/nucleotide-transformer-v2-100m-multi-species
+base_model_name: InstaDeepAI/nucleotide-transformer-v2-100m-multi-species
+experiment_name: bertax/bertax_substratified/full

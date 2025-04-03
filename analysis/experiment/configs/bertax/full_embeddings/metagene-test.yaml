@@ -1,0 +1,16 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+testing_name: bertax_embeddings
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: METAGENE
+tokenizer_name: metagene-ai/METAGENE-1
+base_model_name: metagene-ai/METAGENE-1
+experiment_name: bertax/full_embeddings
+eval_batch_size: 16
+data_processor_path: /home/apluser/analysis/analysis/experiment/runs/bertax/full_embeddings/METAGENE-1
+tokenized_training_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full_embeddings/METAGENE-1/tokenized_training_data
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full_embeddings/METAGENE-1/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full_embeddings/DNABERT-S/bertax_embeddings/tokenized_testing_data

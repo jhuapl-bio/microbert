@@ -1,0 +1,4 @@
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_sample.csv
+
+# Directories
+experiment_name: bertax/sample

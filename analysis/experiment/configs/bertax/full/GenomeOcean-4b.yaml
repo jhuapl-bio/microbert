@@ -1,0 +1,19 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: GenomeOcean
+tokenizer_name: pGenomeOcean/GenomeOcean-4B
+base_model_name: pGenomeOcean/GenomeOcean-4B
+train_batch_size: 5
+eval_batch_size: 5
+learning_rate: 5e-05
+epochs: 5
+experiment_name: bertax/full
+tokenized_training_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full/GenomeOcean-500M/tokenized_training_data
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full/GenomeOcean-500M/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full/GenomeOcean-500M/tokenized_testing_data
+
+# accelerate launch train_model_multi_gpu.py bertax/full/GenomeOcean-4b.yaml --config_file /home/apluser/.cache/huggingface/accelerate/default_config_test.yaml

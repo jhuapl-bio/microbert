@@ -1,0 +1,13 @@
+training_data: /home/apluser/analysis/analysis/taxonomy/nucl_gb_both.70.limitsize_train_sample.csv
+sequence_column: representative_sequence
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: NT
+train_batch_size: 64
+eval_batch_size: 64
+epochs: 3 # stick to three epochs for now
+
+# Directories
+experiment_name: taxonomy/sample

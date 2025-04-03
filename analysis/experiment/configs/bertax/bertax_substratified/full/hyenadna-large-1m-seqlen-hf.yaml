@@ -1,0 +1,10 @@
+testing_data: /home/apluser/bertax_training/out_bertax/test.tsv
+testing_name: bertax_match
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-large-1m-seqlen-hf
+base_model_name: LongSafari/hyenadna-large-1m-seqlen-hf
+experiment_name: bertax/full

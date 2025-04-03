@@ -1,0 +1,17 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: GenomeOcean
+tokenizer_name: pGenomeOcean/GenomeOcean-500M
+base_model_name: pGenomeOcean/GenomeOcean-500M
+train_batch_size: 32
+eval_batch_size: 256
+learning_rate: 5e-05
+epochs: 5
+experiment_name: bertax/hyperparam_test
+tokenized_training_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full/GenomeOcean-500M/tokenized_training_data
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full/GenomeOcean-500M/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full/GenomeOcean-500M/tokenized_testing_data

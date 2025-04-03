@@ -1,0 +1,14 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-large-1m-seqlen-hf
+base_model_name: LongSafari/hyenadna-large-1m-seqlen-hf
+train_batch_size: 64
+eval_batch_size: 256
+learning_rate: 0.0002
+epochs: 5
+experiment_name: bertax/full_hyena

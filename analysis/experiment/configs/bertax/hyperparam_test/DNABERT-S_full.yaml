@@ -1,0 +1,22 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-S
+base_model_name: zhihan1996/DNABERT-S
+train_batch_size: 16
+eval_batch_size: 64
+learning_rate: 7e-5
+weight_decay: 0.01
+warmup_ratio: 0.05
+epochs: 3
+multi_gpu_count: 8
+bf16: True
+experiment_name: bertax/hyperparam_test/full_seq
+data_processor_path: /home/apluser/analysis/analysis/experiment/runs/bertax/full_dnabert/DNABERT-S
+tokenized_training_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full_dnabert/DNABERT-S/tokenized_training_data
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full_dnabert/DNABERT-S/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/bertax/full_dnabert/DNABERT-S/test_results/tokenized_testing_data

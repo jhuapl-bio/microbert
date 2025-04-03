@@ -1,0 +1,35 @@
+# ignore environments
+venv/
+
+# ignore setup files
+analysis.egg-info/
+
+# ignore data directories
+analysis/process_bertax/bertax_data/
+analysis/process_bertax/bertax_data_split/
+analysis/process_bertax/bertax_out/
+analysis/process_bertax/bertax_out_split/
+analysis/amr/
+analysis/taxonomy/
+
+# ignore notebooks and all model directories in here as these are dev
+analysis/notebooks/
+
+# ignore results of experiment runs
+analysis/experiment/runs/
+
+# ignore all data files
+**/*.pyc
+**/*.fa
+**/*.csv
+**/*.tsv
+**/*.json
+**/*.txt
+**/*.pkl
+**/*.ipynb_checkpoints/
+**/*.tar.gz
+*.whl
+!licenses/*.txt
+
+# ignore random other artifactors
+**/*.DS_Store

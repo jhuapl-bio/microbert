@@ -1,0 +1,14 @@
+training_data: /home/apluser/analysis/analysis/amr/sample_amr_train.csv
+testing_data: /home/apluser/analysis/analysis/amr/sample_amr_test.csv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-2-117M
+base_model_name: zhihan1996/DNABERT-2-117M
+train_batch_size: 8
+eval_batch_size: 16
+learning_rate: 0.0002
+epochs: 1
+experiment_name: amr/test

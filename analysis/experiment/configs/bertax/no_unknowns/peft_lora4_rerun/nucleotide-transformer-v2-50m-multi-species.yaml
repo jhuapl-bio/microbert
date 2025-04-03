@@ -1,0 +1,13 @@
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_nounknown.csv
+testing_name: no_unknown
+new_test_run: true
+test_metrics_dir: /home/apluser/analysis/analysis/experiment/runs/bertax/no_unknowns/peft_lora4_rerun/nucleotide-transformer-v2-50m-multi-species
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: NT
+tokenizer_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+base_model_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+eval_batch_size: 256
+experiment_name: bertax/peft_lora4_rerun

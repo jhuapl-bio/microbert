@@ -1,0 +1,12 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+testing_name: bertax_embeddings
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-small-32k-seqlen-hf
+base_model_name: LongSafari/hyenadna-small-32k-seqlen-hf
+eval_batch_size: 256
+experiment_name: bertax/full_embeddings

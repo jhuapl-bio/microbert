@@ -1,0 +1,16 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: METAGENE
+tokenizer_name: metagene-ai/METAGENE-1
+base_model_name: metagene-ai/METAGENE-1
+train_batch_size: 1
+eval_batch_size: 1
+learning_rate: 5e-05
+epochs: 5
+experiment_name: bertax/full
+multi_gpu_count: 8
+bf16: True

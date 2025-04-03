@@ -1,0 +1,19 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-S
+base_model_name: zhihan1996/DNABERT-S
+train_batch_size: 140
+multi_gpu_count: 8
+eval_batch_size: 64
+learning_rate: 2.5e-5
+weight_decay: 0.01
+warmup_ratio: 0.05
+bf16: True
+epochs: 5
+experiment_name: bertax/hyperparam_test/truncation
+truncated: True

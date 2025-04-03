@@ -1,0 +1,10 @@
+training_data: /home/apluser/analysis/analysis/notebooks/test.tsv
+testing_data: /home/apluser/analysis/analysis/notebooks/test.tsv
+
+# training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_sample.csv
+# testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_sample.csv
+
+train_batch_size: 128
+eval_batch_size: 256
+# Directories
+experiment_name: bertax/nt_batch_test

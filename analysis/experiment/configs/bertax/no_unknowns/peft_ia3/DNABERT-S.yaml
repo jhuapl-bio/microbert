@@ -1,0 +1,13 @@
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_nounknown.csv
+testing_name: no_unknown
+new_test_run: true
+test_metrics_dir: /home/apluser/analysis/analysis/experiment/runs/bertax/no_unknowns/peft_ia3/DNABERT-S
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-S
+base_model_name: zhihan1996/DNABERT-S
+eval_batch_size: 64
+experiment_name: bertax/peft_ia3

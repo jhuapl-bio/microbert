@@ -1,0 +1,12 @@
+training_data: /home/apluser/analysis/analysis/amr/sample_amr_train.csv
+taxonomic_ranks:
+- superkingdom
+- phylum
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-medium-160k-seqlen-hf
+base_model_name: LongSafari/hyenadna-medium-160k-seqlen-hf
+train_batch_size: 16
+eval_batch_size: 16
+learning_rate: 0.0002
+epochs: 1
+experiment_name: amr/sample

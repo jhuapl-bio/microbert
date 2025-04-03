@@ -1,0 +1,14 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: GenomeOcean
+tokenizer_name: pGenomeOcean/GenomeOcean-500M
+base_model_name: pGenomeOcean/GenomeOcean-500M
+train_batch_size: 16
+eval_batch_size: 128
+learning_rate: 2.5e-05
+epochs: 5
+experiment_name: bertax/full
