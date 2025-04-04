@@ -50,7 +50,7 @@ from analysis.experiment.models.hierarchical_model import HierarchicalClassifica
 
 ## Scripts
 
-All of the fllowing scripts uses a single parameter, a path to a config `yaml` file as an argument. See ### Config section for details. 
+All of the following scripts uses a single parameter, a path to a config `yaml` file as an argument. See ### Config section for details. 
 
 ### Fine-tuning
 To fine-tune a genomic language model and evaluate it on a test set, run 
