@@ -4,7 +4,7 @@ COPYRIGHT NOTICE
 
 MicrobeRT: Leveraging Language Models for Analysis of Metagenomic Sequencing Data
 
-This repository contains a comprehensive and configurable pipeline for fine-tuning pre-trained genomic language models (gLMs) on labels of interest such as taxonomic hierarchy and evaluating models and tracking experimental results. This work is funded by the CDC as part of their Broad Agency Announcement (BAA) Topic 15 during the 2024-2025 Fiscal Year. 
+This repository contains a comprehensive and configurable pipeline for fine-tuning pre-trained genomic language models (gLMs) on labels of interest such as taxonomic hierarchy and evaluating models and tracking experimental results. This work is funded by the CDC BAA contract #75D30124C20202.
 
 There are two primary training/testing scripts for fine-tuning and evaluating open-source genomic language models. 
 
