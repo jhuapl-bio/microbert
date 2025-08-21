@@ -1,10 +1,12 @@
-COPYRIGHT NOTICE
+**COPYRIGHT NOTICE**
 
 © 2024-2025 The Johns Hopkins University Applied Physics Laboratory LLC
 
-MicrobeRT: Leveraging Language Models for Analysis of Metagenomic Sequencing Data
+**MicrobeRT**: Leveraging Language Models for Analysis of Metagenomic Sequencing Data
 
-This repository contains a comprehensive and configurable pipeline for fine-tuning pre-trained genomic language models (gLMs) on labels of interest such as taxonomic hierarchy and evaluating models and tracking experimental results. This work is funded by the CDC BAA contract #75D30124C20202.
+This repository contains a comprehensive and configurable pipeline for fine-tuning pre-trained genomic language models (gLMs) on labels of interest such as taxonomic hierarchy and evaluating models and tracking experimental results. See [acknowledgement](#acknowledgement).
+
+# Instructions
 
 There are two primary training/testing scripts for fine-tuning and evaluating open-source genomic language models. 
 
@@ -245,3 +247,7 @@ Additional features of the class:
 ### Triton Issue
 It looks like DNABERT-2 is not compatible with the `triton` package [DNABERT ISSUE](https://github.com/MAGICS-LAB/DNABERT_2/issues/57).
 We got around this by explicitly uninstalling `pip uninstall triton`.
+
+### Acknowledgement
+
+This work was supported by funding from the U.S. Centers for Disease Control and Prevention (CDC) through the Office of Readiness and Response under Contract No. 75D30124C20202.
