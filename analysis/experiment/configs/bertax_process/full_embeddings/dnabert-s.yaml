@@ -1,0 +1,13 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_process_stratified.csv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_process_stratified.csv
+testing_name: bertax_embeddings
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-S
+base_model_name: zhihan1996/DNABERT-S
+experiment_name: bertax_process/full_embeddings
+eval_batch_size: 50
+train_batch_size: 64 # this is for the MLP

@@ -1,0 +1,21 @@
+training_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_train_sample.csv
+validation_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_val_sample.csv
+testing_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_test_sample.csv
+sequence_column: representative_sequence
+train_iterable: True
+taxonomic_ranks:
+- superkingdom
+- phylum
+- family
+- genus
+- species
+multi_gpu_count: 2
+train_batch_size: 16
+learning_rate: 0.0001
+eval_batch_size: 128
+epochs: 3 # stick to three epochs for now
+
+# Directories
+data_processor_path: /home/apluser/analysis/analysis/process_taxonomy
+data_processor_filename: data_processor_sample.pkl
+experiment_name: taxonomy/sample/nt_multi_2

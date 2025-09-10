@@ -1,0 +1,7 @@
+#!/bin/bash
+
+python /home/apluser/analysis/analysis/experiment/utils/parse_eval_log_file.py --log_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/whole --metrics_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/whole/metrics.csv
+python /home/apluser/analysis/analysis/experiment/utils/parse_eval_log_file.py --log_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/partial --metrics_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/partial/metrics.csv
+python /home/apluser/analysis/analysis/experiment/utils/parse_eval_log_file.py --log_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/contains --metrics_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/contains/metrics.csv
+python /home/apluser/analysis/analysis/experiment/utils/parse_eval_log_file.py --log_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/contains_50 --metrics_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/contains_50/metrics.csv
+python /home/apluser/analysis/analysis/experiment/utils/parse_eval_log_file.py --log_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/contains_100 --metrics_file /home/apluser/analysis/analysis/experiment/runs/amr/binary/contains_100/metrics.csv

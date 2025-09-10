@@ -1,0 +1,12 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train.tsv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test.tsv
+testing_name: bertax_embeddings
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: NT
+tokenizer_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+base_model_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+experiment_name: bertax/full_embeddings
+eval_batch_size: 256

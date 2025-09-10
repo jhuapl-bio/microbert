@@ -1,0 +1,31 @@
+training_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/deePaC_data/combined_train_strat_hum.csv
+testing_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/deePaC_data/combined_test_humspec_strat.csv
+validation_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/deePaC_data/combined_val_strat_hum.csv
+
+train_iterable: True
+num_rows_iterable: 20003716
+use_class_weights: True
+
+labels:
+- pathogenicity
+
+sequence_column: Sequence
+
+data_processor_path: /home/apluser/analysis/analysis/process_pathogenicity_viral/deePaC_data
+
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-large-1m-seqlen-hf
+base_model_name: LongSafari/hyenadna-large-1m-seqlen-hf
+train_batch_size: 750
+eval_batch_size: 2000
+learning_rate: 0.00002260675046825702 # 0.00028258438085321274 * 8
+epochs: 5
+multi_gpu_count: 8
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+experiment_name: pathogenicity_viral_DeePaC/binary
+
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/pathogenicity_viral_DeePaC/binary/hyenadna-large-1m-seqlen-hf/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/pathogenicity_viral_DeePaC/binary/hyenadna-large-1m-seqlen-hf/test_results/tokenized_testing_data

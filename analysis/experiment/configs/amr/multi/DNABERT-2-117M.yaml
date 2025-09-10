@@ -1,0 +1,29 @@
+training_data: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split/train_process.csv
+testing_data: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split/test_process.csv
+validation_data: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split/val_process.csv
+
+train_iterable: True
+use_class_weights: True
+
+labels:
+- AMR
+
+sequence_column: Sequence
+
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-2-117M
+base_model_name: zhihan1996/DNABERT-2-117M
+train_batch_size: 230
+eval_batch_size: 1500
+learning_rate: 0.00536
+epochs: 5
+multi_gpu_count: 8
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+data_processor_path: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split
+experiment_name: amr/multi
+
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/amr/multi/DNABERT-S/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/amr/multi/DNABERT-S/test_results/tokenized_testing_data

@@ -1,0 +1,43 @@
+# training_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_train.csv
+# validation_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_val.csv
+# testing_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_test.csv
+
+# tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/nucl_gb/hyenadna-large-1m-seqlen-hf/tokenized_validation_data
+# tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/nucl_gb/hyenadna-large-1m-seqlen-hf/test_results/tokenized_testing_data
+
+testing_data: /home/apluser/analysis/analysis/process_taxonomy/comp2_tax_nucl.csv
+testing_name: bertax_comp2
+new_test_run: true
+test_metrics_dir: /home/apluser/analysis/analysis/experiment/runs/taxonomy/nucl_gb/bertax_comp/hyena_large_species/bertax_comp2
+
+# train_iterable: True
+# num_rows_iterable: 155725641
+labels:
+- superkingdom
+- phylum
+- family
+- genus
+- species
+
+sequence_column: representative_sequence
+
+prediction_loss_only: True
+predictions_batch: 10000
+save_probabilities: False # is this working???
+
+# multi_gpu_count: 1 # use all 8 GPUs
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-large-1m-seqlen-hf
+base_model_name: LongSafari/hyenadna-large-1m-seqlen-hf
+train_batch_size: 64
+learning_rate: 0.0004 # based on optim results
+eval_batch_size: 128
+warmup_ratio: 0.05
+weight_decay: 0.01
+bf16: True
+epochs: 5
+
+# Directories
+data_processor_path: /home/apluser/analysis/analysis/process_taxonomy
+data_processor_filename: data_processor.pkl
+experiment_name: taxonomy/nucl_gb/full_species

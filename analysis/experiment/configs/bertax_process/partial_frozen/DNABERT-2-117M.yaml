@@ -1,0 +1,16 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_process_stratified.csv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_process_stratified.csv
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-2-117M
+base_model_name: zhihan1996/DNABERT-2-117M
+train_batch_size: 16
+eval_batch_size: 64
+learning_rate: 2.5e-05
+epochs: 5
+experiment_name: bertax_process/partial_frozen
+freeze_layers_fraction: 0.75
+multi_gpu_count: 4

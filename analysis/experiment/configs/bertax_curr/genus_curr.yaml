@@ -1,0 +1,26 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_process.csv
+validation_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/val_process.csv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_process.csv
+
+tokenized_training_data: /home/apluser/analysis/analysis/experiment/runs/bertax_curr/genus/nucleotide-transformer-v2-50m-multi-species/tokenized_training_data
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/bertax_curr/genus/nucleotide-transformer-v2-50m-multi-species/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/bertax_curr/genus/nucleotide-transformer-v2-50m-multi-species/test_results/tokenized_testing_data
+
+labels:
+- genus
+
+use_class_weights: False
+epochs: 5
+
+bf16: True
+
+weight_decay: 0.01
+warmup_ratio: 0.05
+
+train_batch_size: 128
+eval_batch_size: 256
+
+# Directories
+model_trained_dir: /home/apluser/analysis/analysis/experiment/runs/bertax_curr/phylum/nucleotide-transformer-v2-50m-multi-species/models
+data_processor_path: /home/apluser/analysis/analysis/process_bertax/bertax_out_split
+experiment_name: bertax_curr/genus_curr

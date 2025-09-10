@@ -1,0 +1,20 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_process.csv
+validation_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/val_process.csv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_process.csv
+data_processor_path: /home/apluser/analysis/analysis/process_bertax/bertax_out_split
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+model_type: NT
+tokenizer_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+base_model_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+experiment_name: bertax_process/peft_lora_lr2
+peft_method: lora
+epochs: 5
+warmup_ratio: 0
+weight_decay: 0
+bf16: False
+learning_rate: 0.00002
+train_batch_size: 128
+eval_batch_size: 256

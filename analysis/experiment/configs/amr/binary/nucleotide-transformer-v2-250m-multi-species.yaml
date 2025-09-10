@@ -1,0 +1,32 @@
+training_data: /home/apluser/analysis/analysis/process_amr/amr_out_split/train_process.csv
+testing_data: /home/apluser/analysis/analysis/process_amr/amr_out_split/test_process.csv
+validation_data: /home/apluser/analysis/analysis/process_amr/amr_out_split/val_process.csv
+
+train_iterable: True
+use_class_weights: True
+
+labels:
+- AMR
+
+sequence_column: Sequence
+
+
+data_processor_path: /home/apluser/analysis/analysis/process_amr/amr_out_split
+experiment_name: amr/binary
+
+model_type: NT
+tokenizer_name: InstaDeepAI/nucleotide-transformer-v2-250m-multi-species
+base_model_name: InstaDeepAI/nucleotide-transformer-v2-250m-multi-species
+train_batch_size: 60
+eval_batch_size: 700
+learning_rate: 0.00018940537277229512 # 2.367567159653689e-05 * 8
+epochs: 5
+
+multi_gpu_count: 8
+experiment_name: amr/binary
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/amr/binary/nucleotide-transformer-v2-50m-multi-species/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/amr/binary/nucleotide-transformer-v2-50m-multi-species/test_results/tokenized_testing_data

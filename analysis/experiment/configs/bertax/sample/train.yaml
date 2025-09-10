@@ -3,3 +3,6 @@ testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/te
 
 # Directories
 experiment_name: bertax/sample
+epochs: 1
+train_batch_size: 128
+eval_batch_size: 128

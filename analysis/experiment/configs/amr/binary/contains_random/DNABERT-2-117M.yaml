@@ -1,0 +1,32 @@
+# training_data: /home/apluser/analysis/analysis/process_amr/amr_out_split/train_process.csv
+# testing_data: /home/apluser/analysis/analysis/process_amr/amr_out_split/test_process.csv
+# validation_data: /home/apluser/analysis/analysis/process_amr/amr_out_split/val_process.csv
+
+testing_data: /home/apluser/analysis/analysis/process_amr/input/final_test/amr_with_random.tsv
+testing_name: binary_contains_random
+new_test_run: true
+test_metrics_dir: /home/apluser/analysis/analysis/experiment/runs/amr/binary/contains_random/dnabert2
+
+
+train_iterable: True
+use_class_weights: True
+
+labels:
+- AMR
+
+sequence_column: Sequence
+
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-2-117M
+base_model_name: zhihan1996/DNABERT-2-117M
+train_batch_size: 230
+eval_batch_size: 20
+learning_rate: 0.00268
+epochs: 5
+multi_gpu_count: 4
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+data_processor_path: /home/apluser/analysis/analysis/process_amr/amr_out_split
+experiment_name: amr/binary

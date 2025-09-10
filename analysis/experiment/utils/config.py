@@ -7,35 +7,34 @@ from typing import Union
 import string
 import os
 from pathlib import Path
-from analysis.experiment.utils.constants import MODELS, TAX_RANKS
+from analysis.experiment.utils.constants import MODELS
 from analysis.experiment.utils.train_logger import logger
 
-# TODO fix hardcoding config_dir
-CONFIG_DIR = "/home/apluser/analysis/analysis/experiment/configs"
+# set config_dir and experiment_dir relative to current file path
+CONFIG_DIR = str(Path(__file__).resolve().parent.parent / "configs")
+EXPERIMENT_DIR = str(Path(__file__).resolve().parent.parent.parent / "experiment")
 
 # Set unrestrictive umask before any file operations
 os.umask(0o000)
 
-
 class Config:
     """
-    A configuration class for Hierarchical Classification and Multiclass Classification reads parameters from a YAML file and dynamically loads them as class attributes.
+    A configuration class for Multiclass Classification, reads parameters from a YAML file and dynamically loads them as class attributes.
     """
 
     def __init__(self, config_path: Union[str, bytes, Path]):
         self.config_path = config_path
 
-        # Default data paths to raw data csvs before tokenization (can be overridden by the YAML file)
+        # data paths to raw data csvs before tokenization (can be overridden by config file)
         self.training_data = None
         self.validation_data = None
         self.testing_data = None
-        self.stratify = None # column name, if any, to stratify train/val/test splits on (e.g. genus)
-
+        self.stratify = None  # column name, if any, to stratify train/val/test splits on (e.g. genus)
+        self.embeddings_checkpoint_h5 = None  # it will look in the save_dir if this isn't set (this was added for MLP training)
         # name of dir to store test set results, default to test_results for back compatability
         self.testing_name = "test_results"
         # default, this gets overriden if original train run, else needs to be specified explicitly as a full dir path to save test metrics dir
         self.test_metrics_dir = None
-        
         # if testing on new dataset different from original train run
         self.new_test_run = False
 
@@ -43,46 +42,57 @@ class Config:
         self.tokenized_training_data = None
         self.tokenized_validation_data = None
         self.tokenized_testing_data = None
-
+        
         # data processor
-        self.classification = (
-            False  # defaults to False (doing hierarchical classification by default)
-        )
-        self.data_processor_filename = (
-            "data_processor.pkl"  # default filename for data_processor
-        )
-
         self.data_processor_path = None  # create path to data_processor
+        self.data_processor_filename = "data_processor.pkl"  # default filename for data_processor
 
-        self.randomization = False
-        self.freeze_layers_fraction = 0.0
+        # column names
+        self.sequence_column = "sequence"  # dna sequence column name
+        self.labels = (
+            None  # by default do hierarchical classification on self.taxonomic_ranks
+        )
         self.taxonomic_ranks = [
             "superkingdom",
             "phylum",
             "genus",
-        ]  # default to Bertax's evaluation
-        self.label_column = "genus"
-        self.sequence_column = "sequence"  # dna sequence column name
+        ]
 
         # model parameters (defaults to NT-50m model)
         self.model_type = "NT"
+        self.base_model_name = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
         self.tokenizer_name = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
         self.tokenizer_kwargs = None  # if any tokenizer_kwargs different from default
-        self.base_model_name = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
 
-        # peft
-        self.peft_method = None  # should be None, "lora" or "ia3"
-        # model training parameters
-        self.lora_r = 1
+        # curr learning
+        self.model_trained_dir = None # load in previously trained model for curr learning
+        
+        # training parameters
+        self.train_iterable = False  # bool to check if need to use IterableDataset for tokenizing training data as argument for HF Trainer
+        self.num_rows_iterable = None
+        self.use_class_weights = False # bool whether to use class_weights in data_processor for computing loss, valid for imbalanced classification
         self.train_batch_size = 16  # batch size per GPU for training
         self.eval_batch_size = 16  # batch size per GPU for eval
         self.epochs = 3  # Max number of train epochs (default 3)
         self.learning_rate = 0.00002  # initial learning rate for AdamW optimizer
         self.fp16 = False  # Whether to use fp16 16-bit (mixed) precision training instead of 32-bit training.
-        self.bf16 = False
-        self.weight_decay = 0
-        self.warmup_ratio = 0
-        self.eval_accumulation_steps = 4
+        self.bf16 = False # True seems to be preferred for newer GPUS if we can do it
+        self.weight_decay = 0 # 0.01 can be default
+        self.warmup_ratio = 0 # 0.05 can be default
+        # https://huggingface.co/docs/transformers/v4.52.2/en/main_classes/optimizer_schedules#transformers.SchedulerType
+        self.lr_scheduler_type = "cosine" # calls get_cosine_schedule_with_warmup
+        self.gradient_accumulation_steps = 1  # HF trainer arguments default
+        
+        # model validation parameters
+        self.eval_accumulation_steps = 4  # to offload predictions from GPU to CPU, avoids GPU OOM
+        self.prediction_loss_only = False # to only output/save validation loss instead of all individual probabilities during train loop
+
+        # model testing parameters
+        self.predictions_batch = None # use to batch test dataset and save off results in chunks to concat for summary metrics, defaults to None
+        self.save_probabilities = True # use to save probabilities for each class in test set 
+        # careful: this can be very memory intensive, especially if large number of classes, defaults to True
+
+        
         self.multi_gpu_count = 1
         self.metric_for_best_model = (
             "eval_loss"  # default loss for determining best moel
@@ -94,22 +104,35 @@ class Config:
             3  # Stop training after num epochs of no improvement
         )
 
+        # alternative model training method parameters, e.g. PEFT
+        self.peft_method = None  # should be None, "lora" or "ia3"
+        self.lora_r = 1 # lora r parameter
+        self.randomization = False # randomization of model weights
+        self.freeze_layers_fraction = 0.0 # fraction of layers to freeze
+
         # save parameters
-        self.script_args_file = "config_arguments.txt"
+        self.script_args_file = "config_arguments.txt" # file name for storing config arguments saved in save_dir
+        self.epochs_trained_file = "epochs_trained.txt" # file name for updating number of epochs trained during training for pre-emptabile training
+        
         self.experiment_name = (
             None  # Initialize as None so generates random set of characters
         )
-        self.top_k = 1  # Defaults to top_k = 1
-
+        
         # Load configuration from the YAML file and overwrite default values if necessary
         config_json = self.read_yaml()
         if config_json:
             self._load_class_vars(config_json)
 
-        # Initialize attributes for directories
+        # initalize labels attribute
+        if self.labels:
+            if isinstance(self.labels, str):
+                self.labels = [self.labels]
+        else:
+            # doing taxonomic classification, backward compatibility
+            self.labels = self.taxonomic_ranks
 
-        # TODO fix hardcoding experiment_dir
-        self.experiment_dir = "/home/apluser/analysis/analysis/experiment"
+        # Initialize attributes for directories
+        self.experiment_dir = EXPERIMENT_DIR
         self.run_dir = os.path.join(self.experiment_dir, "runs")
         os.makedirs(self.run_dir, exist_ok=True)
 
@@ -131,6 +154,9 @@ class Config:
         self.save_dir = os.path.join(self.results_dir, self.model_save_name)
         os.makedirs(self.save_dir, exist_ok=True)
 
+        # Create epochs trained logger
+        self.epochs_trained_path = os.path.join(self.save_dir, self.epochs_trained_file)
+
         # Create training history dir
         self.train_history_dir = os.path.join(self.save_dir, "train_history")
         os.makedirs(self.train_history_dir, exist_ok=True)
@@ -143,6 +169,11 @@ class Config:
         if self.data_processor_path is None:
             self.data_processor_path = self.save_dir
 
+        if self.embeddings_checkpoint_h5 is None:
+            self.embeddings_checkpoint_h5 = os.path.join(
+                self.save_dir, "checkpoints.h5"
+            )
+
         # create tokenized dataset save_paths if not already set using save_dir as default
         if self.tokenized_training_data is None:
             self.tokenized_training_data = os.path.join(
@@ -152,15 +183,17 @@ class Config:
             self.tokenized_validation_data = os.path.join(
                 self.save_dir, "tokenized_validation_data"
             )
-        
+
         # new test run besides original train run
         if bool(self.new_test_run):
             # must specify test_metrics_dir in this case
             if self.test_metrics_dir:
                 os.makedirs(self.test_metrics_dir, exist_ok=True)
             else:
-                raise ValueError("Must specify test_metrics_dir if running prev trained model on new test set")
-            
+                raise ValueError(
+                    "Must specify test_metrics_dir if running prev trained model on new test set"
+                )
+
             if self.tokenized_testing_data is None:
                 # tokenized test dataset gets saved to subdirectory specified by test_metrics_dir to keep track of different test runs with same trained model
                 self.tokenized_testing_data = os.path.join(
@@ -170,20 +203,16 @@ class Config:
             # Create testing metrics folder as default within self.save_dir
             self.test_metrics_dir = os.path.join(self.save_dir, self.testing_name)
             os.makedirs(self.test_metrics_dir, exist_ok=True)
-            
+
             if self.tokenized_testing_data is None:
                 # tokenized test dataset gets saved to subdirectory specified by test_metrics_dir to keep track of different test runs with same trained model
                 self.tokenized_testing_data = os.path.join(
                     self.test_metrics_dir, "tokenized_testing_data"
                 )
-            
 
         # Validate base_model_name
         self._validate_base_model_name()
 
-        # Validate tax ranks if not None (else doing classification)
-        if self.taxonomic_ranks is not None:
-            self._validate_taxonomic_ranks()
 
         # Save config arguments to a file in the new run dir
         self.save_args_to_file()
@@ -241,15 +270,6 @@ class Config:
             logger.error(error)
             raise ValueError(error)
 
-    def _validate_taxonomic_ranks(self):
-        """
-        Validates that taxonomic_ranks only contains elements from the predefined valid list.
-        """
-        invalid_ranks = [rank for rank in self.taxonomic_ranks if rank not in TAX_RANKS]
-        if len(invalid_ranks) > 0:
-            error = f"Invalid taxonomic ranks found: {invalid_ranks}. Valid options are: {TAX_RANKS}"
-            logger.error(error)
-            raise ValueError(error)
 
     def save_args_to_file(self):
         """

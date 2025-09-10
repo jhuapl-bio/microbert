@@ -7,20 +7,20 @@ from transformers.models.bert.configuration_bert import BertConfig
 
 
 class HierarchicalClassificationModel(nn.Module):
-    def __init__(self, base_model_name, tax_ranks, num_labels):
+    def __init__(self, base_model_name, num_labels, class_weights=None):
         """
         Initialize the model.
 
         Args:
             base_model_name (str): The name of the pretrained model.
-            tax_ranks (list of str): List of taxonomic rank names.
-            num_labels (list of int): List where each element is the number of labels for the corresponding rank.
+            num_labels (list of int): List where each element is the number of unique classes for the corresponding label.
+            class_weights (list of list): List where each element is the class weights associated with the corresponding label.
         """
         super(HierarchicalClassificationModel, self).__init__()
 
         self.base_model_name = base_model_name
 
-        if base_model_name in ["zhihan1996/DNABERT-2-117M"]:
+        if 'DNABERT-2-117M' in base_model_name:
             # Load Config if exists - need for DNABERT 2
             # https://www.kaggle.com/code/gabrielcabas/dnabert-for-classification
             # https://huggingface.co/zhihan1996/DNABERT-2-117M/discussions/26
@@ -46,12 +46,17 @@ class HierarchicalClassificationModel(nn.Module):
                 base_model_name, trust_remote_code=True
             )
             self.config = self.base_model.config
-            # Store the taxonomic ranks and number of labels as attributes
-        self.tax_ranks = tax_ranks
+            
+        # Store the number of labels as a class attribute
         self.num_labels = num_labels
 
+        # Store class weights as list of tensors as a class attribute if not None
+        self.class_weights = None
+        if class_weights is not None:
+            self.class_weights = [torch.tensor(weight, dtype=torch.float) for weight in class_weights]
+
         if "hyenadna" in base_model_name:
-            # Create a list of classifier layers, each corresponding to a taxonomic rank
+            # Create a list of classifier layers, each corresponding to a label
             self.classifiers = nn.ModuleList(
                 [
                     nn.Linear(self.base_model.config.d_model, num_labels)
@@ -59,7 +64,7 @@ class HierarchicalClassificationModel(nn.Module):
                 ]
             )
         else:
-            # Create a list of classifier layers, each corresponding to a taxonomic rank
+            # Create a list of classifier layers, each corresponding to a label
             self.classifiers = nn.ModuleList(
                 [
                     nn.Linear(self.base_model.config.hidden_size, num_labels)
@@ -70,16 +75,16 @@ class HierarchicalClassificationModel(nn.Module):
     def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
         """
         Forward pass
-
+    
         Args:
             input_ids (torch.Tensor): Input token IDs.
             attention_mask (torch.Tensor): Attention mask for input sequences.
             labels (torch.Tensor, optional): Target labels for training.
-
+    
         Returns:
             dict: Contains logits and, if labels are provided, the computed loss.
         """
-
+            
         # Forward pass through the base model
         if "hyenadna" in self.base_model_name:
             # Hyena models do not have attention mask
@@ -103,22 +108,24 @@ class HierarchicalClassificationModel(nn.Module):
             hidden_states = outputs.hidden_states[-1]  # Extract last hidden state
             mean_embeddings = self.mean_pooling(hidden_states, attention_mask)
 
-        # Compute logits for each taxonomic rank
+        # Compute logits for each label as a list
         logits = [classifier(mean_embeddings) for classifier in self.classifiers]
-
         # If labels are provided, compute loss for each level
         if labels is not None:
-            loss_fct = nn.CrossEntropyLoss()
-            if len(logits) == 1:
-                losses = [loss_fct(logits[0], labels)]
-            else:
-                losses = [
-                    loss_fct(logit, labels[:, idx]) for idx, logit in enumerate(logits)
-                ]
+            losses = []
+            for idx, logit in enumerate(logits):
+                if self.class_weights is not None and idx < len(self.class_weights):
+                    weight = self.class_weights[idx].to(logit.device)
+                    loss_fct = nn.CrossEntropyLoss(weight=weight)
+                else:
+                    loss_fct = nn.CrossEntropyLoss()
+                loss = loss_fct(logit, labels[:, idx])
+                losses.append(loss)
+    
             total_loss = sum(losses)
             return {"loss": total_loss, "logits": logits}
-
-        # If no labels are provided, return logits only
+            
+        # else do not return loss
         return {"logits": logits}
 
     def mean_pooling(self, hidden_states, attention_mask):

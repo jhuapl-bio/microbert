@@ -1,0 +1,30 @@
+#training_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split/on_phylum.950/down_80.950viral.csv
+testing_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split/on_phylum.950/down_20.950viral.csv
+validation_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split/on_phylum.950/down_20.950viral_val.csv
+
+# train_iterable: True
+# num_rows_iterable: 2318138
+# use_class_weights: True
+
+labels:
+- pathogenicity
+
+sequence_column: Sequence
+
+data_processor_path: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split
+
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-small-32k-seqlen-hf
+base_model_name: LongSafari/hyenadna-small-32k-seqlen-hf
+train_batch_size: 750
+eval_batch_size: 1000
+learning_rate: 0.0039013452818481465 # 0.0004876681602310183 * 8
+epochs: 5
+multi_gpu_count: 8
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+experiment_name: pathogenicity_viral/binary
+# tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/pathogenicity_viral/binary/hyenadna-small-32k-seqlen-hf/tokenized_validation_data
+# tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/pathogenicity_viral/binary/hyenadna-small-32k-seqlen-hf/test_results/tokenized_testing_data

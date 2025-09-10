@@ -1,0 +1,11 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_process_sample.csv
+validation_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/val_process_sample.csv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_process_sample.csv
+
+labels: genus
+eval_batch_size: 512
+
+# Directories
+experiment_name: sample/train_embeddings_iterable
+
+data_processor_path: /home/apluser/analysis/analysis/process_bertax/bertax_out_split

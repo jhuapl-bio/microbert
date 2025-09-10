@@ -1,0 +1,30 @@
+#training_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split/on_phylum.950/down_80.950viral.csv
+testing_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split/on_phylum.950/down_20.950viral.csv
+validation_data: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split/on_phylum.950/down_20.950viral_val.csv
+
+# train_iterable: True
+# num_rows_iterable: 2318138
+# use_class_weights: True
+
+labels:
+- pathogenicity
+
+sequence_column: Sequence
+
+data_processor_path: /home/apluser/analysis/analysis/process_pathogenicity_viral/pathogenicity_out_split
+
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-2-117M
+base_model_name: zhihan1996/DNABERT-2-117M
+train_batch_size: 230
+eval_batch_size: 1500
+learning_rate: 0.00268
+epochs: 5
+multi_gpu_count: 4
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+experiment_name: pathogenicity_viral/binary
+# tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/pathogenicity_viral/binary/DNABERT-2-117M/tokenized_validation_data
+# tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/pathogenicity_viral/binary/DNABERT-2-117M/test_results/tokenized_testing_data

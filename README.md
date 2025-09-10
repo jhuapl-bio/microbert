@@ -1,29 +1,27 @@
-**COPYRIGHT NOTICE**
+COPYRIGHT NOTICE
 
 © 2024-2025 The Johns Hopkins University Applied Physics Laboratory LLC
 
-**MicrobeRT**: Leveraging Language Models for Analysis of Metagenomic Sequencing Data
+MicrobeRT: Leveraging Language Models for Analysis of Metagenomic Sequencing Data
 
-This repository contains a comprehensive and configurable pipeline for fine-tuning pre-trained genomic language models (gLMs) on labels of interest such as taxonomic hierarchy and evaluating models and tracking experimental results. See [acknowledgement](#acknowledgement).
+This repository contains a comprehensive and configurable pipeline for fine-tuning pre-trained genomic language models (gLMs) on labels of interest such as taxonomic hierarchy and evaluating models and tracking experimental results. This work was supported by funding from the U.S. Centers for Disease Control and Prevention through the Office of Readiness and Response under Contract # 75D30124C20202.
 
-# Instructions
-
-There are two primary training/testing scripts for fine-tuning and evaluating open-source genomic language models. 
-
-- **Fine-tuning** (`train_model.py`): Fine-tunes a genomic language model on either a hierarchical multiclass classification (e.g. taxonomy prediction) or standard multiclass classification task of your choice, and evaluates the fine-tuned model on a test set of specification.  
+There are four primary training/testing scripts for fine-tuning and evaluating open-source genomic language models. 
+- **Generate Data** (`train_data.py`): Generates tokenized data for a given genomic language model
+- **Fine-tuning** (`train_model_multi_gpu.py`): Fine-tunes a genomic language model on a multiclass classification task of your choice (e.g. taxonomic classification), and evaluates the fine-tuned model on a test set of specification.  
 - **Generating Embeddings** (`train_embeddings.py`): Generates embeddings from a genomic language model. 
+- **Inference** (`test_sequences.py`): Generates predictions of a trained gLM on a set of test sequences. 
 
-## Setup Instructions
+# Setup Instructions
 
 **Requirements:** 
-- Python 3.11
-- Open source Python libraries defined in `requirements.txt`
+- Python>=3.11
+- Python libraries defined in `requirements.txt`
 > Note: All software packages used in this project fall under the MIT License, Apache License, or BSD License. and are therefore susceptible to release under these open-source licenses. See `requirement_licenses.md` for more details on requirements and their licenses. All Genomic Language Models considered are open source and available on public model repostory Hugging Face. See `requirement_models.md` for list of models used. 
 
-### Create a Virtual Environment or Conda Environment
-
+### Environment
+Create a virtual environment:
 ```
-# Starting from the Project's ROOT DIRECTORY
 python -m venv env_name
 ```
 or 
@@ -50,41 +48,124 @@ This installs `analysis` as a module that enables local imports, e.g.
 from analysis.experiment.models.hierarchical_model import HierarchicalClassificationModel
 ```
 
+### Triton Issue
+It looks like DNABERT-2 is not compatible with the `triton` package [DNABERT ISSUE](https://github.com/MAGICS-LAB/DNABERT_2/issues/57).
+We got around this by explicitly uninstalling `pip uninstall triton`.
+
+## Model Compatibility
+We have verified that the training and testing pipeline functions correctly with the following models, and the pipeline will raise a 
+
+### Nucleotide Transformer (NT)
+- [InstaDeepAI/nucleotide-transformer-v2-50m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-50m-multi-species)  
+- [InstaDeepAI/nucleotide-transformer-v2-100m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-100m-multi-species)  
+- [InstaDeepAI/nucleotide-transformer-v2-250m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-250m-multi-species)
+
+### DNABERT
+- [zhihan1996/DNABERT-2-117M](https://huggingface.co/zhihan1996/DNABERT-2-117M)  
+- [zhihan1996/DNABERT-S](https://huggingface.co/zhihan1996/DNABERT-S)
+
+### HyenaDNA
+- [LongSafari/hyenadna-large-1m-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-large-1m-seqlen-hf)  
+- [LongSafari/hyenadna-medium-450k-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-medium-450k-seqlen-hf)  
+- [LongSafari/hyenadna-medium-160k-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-medium-160k-seqlen-hf)  
+- [LongSafari/hyenadna-small-32k-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-small-32k-seqlen-hf)
+
+### METAGENE
+- [metagene-ai/METAGENE-1](https://huggingface.co/metagene-ai/METAGENE-1)
+
+### GenomeOcean
+- [pGenomeOcean/GenomeOcean-4B](https://huggingface.co/pGenomeOcean/GenomeOcean-4B)  
+- [pGenomeOcean/GenomeOcean-100M](https://huggingface.co/pGenomeOcean/GenomeOcean-100M)  
+- [pGenomeOcean/GenomeOcean-500M](https://huggingface.co/pGenomeOcean/GenomeOcean-500M)
+
+
 ## Scripts
 
-All of the following scripts uses a single parameter, a path to a config `yaml` file as an argument. See ### Config section for details. 
+All the following scripts use a single parameter: the path to a config `yaml` file as an argument.  
+See the [Config](#config) and [Config Parameters](#config-parameters) sections for details.
 
-### Fine-tuning
-To fine-tune a genomic language model and evaluate it on a test set, run 
+### Data Tokenization
+To generate tokenized data only for a set of sequences
 ```
-python ~/analysis/experiment/train_model.py --config_path CONFIG_YAML_RELATIVE_PATH
-```
-### Embedding
-To only generate model embeddings, run: 
-```
-python ~/analysis/experiment/train_embeddings.py --config_path CONFIG_YAML_RELATIVE_PATH
+python ~/analysis/analysis/experiment/train_data.py --config_path CONFIG_YAML_RELATIVE_PATH
 ```
 
-<!-- ### Baseline
-To run a baseline evaluating pre-trained models with hierarchical multiclass classification or standard multiclass classification head layers without fine-tuning, run 
+### Model Fine-tuning
+To fine-tune a genomic language model on a train set of sequences and evaluate it on a test set of sequences, run 
 ```
-python ~/analysis/experiment/eval_pretrained.py --config_path CONFIG_YAML_RELATIVE_PATH
-``` -->
+python ~/analysis/analysis/experiment/train_model_multi_gpu.py --config_path CONFIG_YAML_RELATIVE_PATH
+```
 
-<!-- ### Transfer Learning
-Additional scripts for training a downstream classification model (e.g. Logistic Regression or a Random Forest) trained on model generated embeddings as features are contained in `~/analysis/experiment/transfer_learning`. This transfer learning pipeline is distinct for hierarchical classification and our implementation uses the package `hiclass`. These can be run as follows:
+### Generating Embeddings
+To generate model embeddings for a set of sequences, run: 
 ```
-python ~/analysis/experiment/transfer_learning/train_hiclass --config_path CONFIG_YAML_RELATIVE_PATH
+python ~/analysis/analysis/experiment/train_embeddings.py --config_path CONFIG_YAML_RELATIVE_PATH
 ```
-for hierarchical multiclass classification.
+
+### Batched Inference
+
+We provide a script to run batched taxonomic classification on input FASTA/FASTQ sequences using a trained genomic language model.  
+The script loads a saved `DataProcessor`, model weights, and the base model tokenizer. It processes sequences in batches and outputs predictions per label, saving the results to a JSON file.
+
 ```
-python ~/analysis/experiment/transfer_learning/train_class --config_path CONFIG_YAML_RELATIVE_PATH
+python /analysis/experiment/test_sequences.py \
+    --base-model-name <MODEL_NAME> \
+    --input-path <INPUT_FASTA_FILE> \
+    --output-path <OUTPUT_JSON_FILE> \
+    [--use-gpu] \
+    --batch-size <BATCH_SIZE> \
+    --top-k <TOP_K> \
+    --threshold <THRESHOLD>
 ```
-for multiclass classification.  -->
+#### Inference Arguments
+
+| Argument            | Description                                                                                   |
+|---------------------|-----------------------------------------------------------------------------------------------|
+| `--base-model-name` | Name of the trained GLM to run inference (default: `LongSafari/hyenadna-large-1m-seqlen-hf`)  |
+| `--input-path`      | Path to the input FASTA/FASTQ file (`.fa` / `.fq`, optionally compressed with `.gz`)          |
+| `--output-path`     | Path where predictions will be saved as a JSON file                                           |
+| `--use-gpu`         | Optional flag to enable GPU inference if available                                            |
+| `--batch-size`      | Number of sequences per batch (default: `256`)                                                |
+| `--top-k`           | Number of top predictions per label to return (default: `5`)                                  |
+| `--threshold`       | Minimum probability required to include a prediction (default: `0.2`)                         |
+
+#### Transfer Learning
+Additional scripts for training a downstream classification model (e.g. Random Forest or MLP) trained on model generated embeddings as features are contained in `~/analysis/analysis/experiment/transfer_learning`. 
+Note this transfer learning pipeline for hierarchical classification uses the package `hiclass`. 
+
+### Data Processor
+
+Before data can be tokenized and used for training with these scripts, it must first be label-encoded using a  
+`DataProcessor` object from `analysis.experiment.utils.data_processor.DataProcessor`.
+
+This preprocessing step is best performed in a separate script, which prepares the raw dataset and fits the label encoder.  
+
+Example preprocessing scripts can be found in:
+- `~/analysis/analysis/process_taxonomy`
+- `~/analysis/analysis/process_amr`
+
+### Example
+
+```python
+from analysis.experiment.utils.data_processor import DataProcessor
+
+# Initialize DataProcessor
+data_processor = DataProcessor(
+    sequence_column=SEQUENCE_COL,   # str: name of column in dataframe containing sequences
+    labels=LABEL_COLS,              # list[str]: list of label/taxonomy columns
+    save_file="data_processor.pkl", # str: filename to save the fitted processor
+)
+
+# Fit label encoder on a dataframe and save results
+df = data_processor.fit_encoder_from_df(
+    df,                 # pandas.DataFrame: your preprocessed dataset
+    save_directory=DATA_DIR  # str or Path: directory where processor artifacts are saved
+)
+```
 
 ## Config
 
-The `Config` class `~/analysis/experiment/utils/config` reads in the path to a `yaml` containing all necessary training, model, and file path parameters. These values override the default settings defined in the class.
+The `Config` class `~/analysis/analysis/experiment/utils/config` reads in the path to a `yaml` containing all necessary training, model, and file path parameters. These values override the default settings defined in the class.
 
 Example usage:
 
@@ -103,7 +184,6 @@ validation_data: "data/val.csv"
 testing_data: "data/test.csv"
 stratify: "genus"
 
-classification: true
 label_column: "genus"
 sequence_column: "sequence"
 
@@ -121,24 +201,26 @@ experiment_name: "GenusClassifier"
 ```
 
 ## Configuration Parameters
-
 Here is a breakdown of the most salient config parameters that can be specified. 
-For a full detailed list, see documentation in ~/analysis/experiment/utils/config.py`
+For a full detailed list, see documentation of parameters listed in `~/analysis/analysis/experiment/utils/config.py`
 
 ### Data Paths
 | Parameter | Description |
 |----------|-------------|
-| `training_data`, `testing_data` | Paths to raw CSV files |
-| `stratify` | Optional column name to stratify train/val/test splits |
-| `tokenized_training_data`, `tokenized_testing_data` | Paths to preprocessed/tokenized dataset (defaults to location saved by default) |
-| `data_processor_path` | Path to saved data processor `.pkl` for tokenizing and encoding input train/test data (defaults to `save_dir`) |
+| `training_data`, `validation_data`, `testing_data` | Paths to raw CSV files |
+| `stratify` | column name, if any, to stratify train/val/test splits |
+| `testing_name` | Subfolder name for saving test results, defaults to `test_results` |
+| `test_metrics_dir` | Subfolder name for saving test metrics if different from original train run | 
+| `new_test_run` | If testing on new dataset different from original train run, should be set to `True`  | 
+| `tokenized_training_data`, `tokenized_validation_data`, `tokenized_testing_data` | Paths to preprocessed/tokenized dataset (defaults to location saved by default) |
+| `data_processor_path` | Path to saved data processor `.pkl` for encoding input train/test data (defaults to `save_dir`) |
+| `data_processor_filename` | Name of data processor `.pkl` file, defaults to `data_processor.pkl` |
 
 ### Task & Processing
 | Parameter | Description |
 |----------|-------------|
-| `classification` | `true` for multiclass classification, `false` for hierarchical classification |
-| `label_column` | Column name of input data csv containing label for classification |
 | `sequence_column` | Column name of input data csv contaning DNA sequence as a string, defaults to `sequence`  |
+| `labels` | Column name sof input data csv containing label for classification, defaults to `['superkingdom', 'phylum', 'genus']` |
 
 ### Model Setup
 | Parameter | Description |
@@ -148,57 +230,82 @@ For a full detailed list, see documentation in ~/analysis/experiment/utils/confi
 | `tokenizer_name` | Tokenizer model name, defaults to `InstaDeepAI/nucleotide-transformer-v2-50m-multi-species` |
 | `tokenizer_kwargs` | Optional dict of tokenizer arguments |
 
-### PEFT
-Use these parameters if using Parameter-Efficient Fine-Tuning (PEFT) methods available to fine-tune models.
-| Parameter | Description |
-|----------|-------------|
-| `peft_method` | `"lora"`, `"ia3"`, or `None` |
-| `lora_r` | Rank for LoRA if enabled |
 
 ### Training Parameters
 | Parameter | Description |
-|----------|-------------|
-| `train_batch_size`, `eval_batch_size` | Per-GPU batch sizes |
-| `epochs` | Total number of epochs |
-| `learning_rate` | Initial learning rate |
-| `fp16`, `bf16` | Mixed precision options |
-| `weight_decay`, `warmup_ratio` | Optimization params |
-| `eval_accumulation_steps` | Batches to accumulate before eval |
-| `multi_gpu_count` | Number of GPUs used |
-| `early_stopping_patience` | Epochs to wait with no improvement |
+|-----------|-------------|
+| `train_iterable` | Whether to use `IterableDataset` for tokenizing training data with HF Trainer (defaults to `False`)|
+| `num_rows_iterable` | Number of rows when using `IterableDataset` (default `None`) |
+| `use_class_weights` | Whether to use class weights (stored in the `data_processor` file) for computing train/val loss (useful for imbalanced classification) |
+| `train_batch_size` | Training batch size per GPU (default `16`) |
+| `eval_batch_size` | Evaluation batch size per GPU (default `16`) |
+| `epochs` | Maximum number of training epochs (default `3`) |
+| `learning_rate` | Initial learning rate for AdamW optimizer (default `2e-5`) |
+| `fp16` | Use 16-bit (mixed) precision training (`True`/`False`) |
+| `bf16` | Use bfloat16 precision (preferred on newer GPUs) |
+| `weight_decay` | Weight decay coefficient for regularization (e.g., `0.01`) |
+| `warmup_ratio` | Fraction of training steps used for learning rate warmup (e.g., `0.05`) |
+| `lr_scheduler_type` | Learning rate scheduler type (default `"cosine"`) |
+| `gradient_accumulation_steps` | Steps to accumulate gradients before optimizer update (default `1`) |
 
-### Evaluation
+### Validation Parameters
 | Parameter | Description |
-|----------|-------------|
-| `metric_for_best_model` | Metric to optimize (e.g., `"eval_loss"`) |
-| `greater_is_better` | If `true`, higher metric = better model |
+|-----------|-------------|
+| `eval_accumulation_steps` | Number of steps before transferring predictions from GPU to CPU (helps avoid OOM errors) |
+| `prediction_loss_only` | Whether to only output/save validation loss without individual predictions |
+
+### Testing Parameters
+| Parameter | Description |
+|-----------|-------------|
+| `predictions_batch` | Batch size for testing dataset results aggregation (default `None`) |
+| `save_probabilities` | Whether to save per-class probabilities for test set (can be memory-intensive) |
+
+### Model Selection & Early Stopping
+| Parameter | Description |
+|-----------|-------------|
+| `multi_gpu_count` | Number of GPUs used for training using `acclerate` framework for multi-gpu training (default `1`) |
+| `metric_for_best_model` | Metric used to determine the best model (default `"eval_loss"`) |
+| `greater_is_better` | Whether a higher value of the metric indicates better performance (default `False` for loss) |
+| `early_stopping_patience` | Number of epochs with no improvement before stopping training (default `3`) |
+
+### Additional Training Parameters
+Use these parameters if using additional training methods such as Parameter-Efficient Fine-Tuning (PEFT) methods to fine-tune models.
+
+| Parameter | Description |
+|-----------|-------------|
+| `peft_method` | `"lora"`, `"ia3"`, or `None` |
+| `lora_r` | Rank for LoRA if enabled |
+| `randomization` | Whether to randomize model weights before training (`True`/`False`) |
+| `freeze_layers_fraction` | Fraction of model layers to freeze during training (0.0–1.0) |
+
 
 ### Saving & Logging
 | Parameter | Description |
-|----------|-------------|
-| `experiment_name` | Name of directory for saving all resulting outputs such as model checkpoints, test results, etc.  for this run (auto-generated if none specifieid) |
-| `testing_name` | Subfolder name for saving test results, defaults to `test_results` |
+|-----------|-------------|
+| `experiment_name` | Name of directory for saving all resulting outputs such as model checkpoints, test results, etc. for this run (auto-generated if none specified) |
+| `script_args_file` | File name for storing configuration arguments saved in the output directory |
+| `epochs_trained_file` | File name for tracking the number of epochs trained (useful for pre-emptible training) |
+
 
 ---
 
 ## Configuration Tips
 
 - You **must** define either a training dataset path or a testing dataset path in the config `yaml` to ensure that training or evaluation mode is run. 
-- Make sure `experiment_dir` is writable (currently hardcoded to `~/analysis/experiment` in the class).
+- Make sure `experiment_dir` is writable (default is hardcoded to `~/analysis/analysis/experiment` in the class).
 - If not explicitly specified, `experiment_name` defaults to a random set of 24 characters as a unique identifier of the experiment run.
-- By default, all experiment runs are output to the directory `~/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/`.
-- All logs from training runs are saved to a single, timestamped log file in the experiment's save directory `~/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/`.
+- By default, all experiment runs are output to the directory `~/analysis/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/`.
+- All logs from training runs are saved to a single, timestamped log file in the experiment's save directory `~/analysis/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/`.
 - `testing_name` is name of subdirectory that stores results of a given test run, defaults to `test_results`. 
-- Outputs of the experiment run include label predictions, all label probabilities, experimental run arguments, saved off data_processor `.pkl` file. All model checkpoints, model training history values and metric plot, and model performance on test dataset are stored in `~/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/` and subfolders within.
-- The best model is saved off as `~/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/model.safetensors`.
-- Model checkpoints and training history are stored in `~/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/train_history`.
-- Model test results are stored in `~/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/test_results`
+- Outputs of the experiment run include label predictions, all label probabilities, experimental run arguments, saved off data_processor `.pkl` file. All model checkpoints, model training history values and metric plot, and model performance on test dataset are stored in `~/analysis/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/` and subfolders within.
+- The best model is saved off as `~/analysis/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/model.safetensors`.
+- Model checkpoints and training history are stored in `~/analysis/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/train_history`.
+- Model test results are stored in `~/analysis/analysis/experiment/runs/EXPERIMENT_NAME/MODEL_NAME/test_results`
 - If path to training data is specified in `training_data`, then the script runs in `training` mode and trains on a subset of this data. If `validation_data` and/or `testing_data` are also specified, then best trained model will evaluate on the datasets specified by these path. Otherwise, the validation and/or testing dataset will be sampled from the training_data (80%/10%/10% split). Option for stratifying the train/val/test split is contained in the condfig parameter `stratify`, which must be a valid input data column. 
 - If `training_data` is not specified, then the script is not in `training` mode and does train on any dataset. Instead, the top performing model from the specified `experiment_name` run is loaded in used to evaluate on the testing_data specified in `testing_data`. Note that `testing_data` must be specified in this case to ensure that eval is done on a valid test set.
 - `tokenizer_kwargs` is a dict of optional keyword arguments passed into the tokenizer.
-- List of possible `model_types`, `tokenizer_name`, and `base_model_name` are contained in `analysis.experiment.utils.constants.MODELS`.
-- If doing a hierarchical classification, make sure config specifies `classification` as `False`. Also make sure`taxonomic_ranks` is specified from list of possible taxonomic ranks are contained in  `analysis.experiment.utils.constants.TAX_RANKS`
-- If doing a multiclass classification, make sure config specifies `classification` as `True`. Also make sure`label_column` is specified as column to be classified.
+- List of possible `model_types`, `tokenizer_name`, and `base_model_name` are contained in `analysis.experiment.utils.constants`.
+- If doing a multiclass classification, make sure `labels` is a list of labels to classify over. 
 - Label encoding and dataset tokenization are cached, and tokenized datasets are saved for faster reloads when rerunning the same training script. If you specify `tokenized_training_data` , `tokenized_validation_data`  and/or `tokenized_testing_data` parameters in the config, then it will use the datasets corresponding to those filepaths (directories) explicitly. Otherwise, it will check in the default location for these datasets if they exist, and load those in. If those also dont exist, it tokenizes from scratch and saves off in the default location.
 - If a model was trained in a previous run, subsequent runs will automatically resume from the last saved checkpoint—preemptibility is enabled to support seamless continuation of training.
 
@@ -219,11 +326,97 @@ experiment/
             ├── tokenized_validation_data/
             └── config_arguments.txt
             └── data_processor.pkl
-            └── data_processor.pkl
             └── train_DATE_TIME_.log
+```
 
+## Running from docker container
+Before starting the container, you must have a preconfigured /data directory on your host machine. This directory should follow the structure below:
+```
+data/
+├── InstaDeepAI__nucleotide-transformer-v2-50m-multi-species/
+  └── base_model/
+  └── data_processor/
+  └── model/
+├── LongSafari__hyenadna-large-1m-seqlen-hf/
+  └── base_model/
+  └── data_processor/
+  └── model/
+└── zhihan1996__DNABERT-2-117M/
+  └── base_model/
+  └── data_processor/
+  └── model/
+├── input/
+├── output/
+```
+
+### Directory Details
+- **`data/MODEL_NAME/base_model`**  
+  Holds the base_model and tokenizer files necessary for preprocessing input sequences and loading fine-tuned model.  
+- **`data/MODEL_NAME/model`**  
+  Contains the trained model weight files (e.g., `model.safetensors`) that are loaded in for evaluating sequences. 
+- **`data/MODEL_NAME/data_processor`**  
+  Includes the data processor used to encode and process sequences
+- **`/data/input`**  
+  Directory to store sequence fasta files for inference  
+- **`/data/output`**  
+  Destination for inference results.  
+
+### Supported Models
+Currently, batched inference is supported for the following base models:
+- `InstaDeepAI__nucleotide-transformer-v2-50m-multi-species`  
+- `LongSafari__hyenadna-large-1m-seqlen-hf`  
+- `zhihan1996__DNABERT-2-117M`  
+
+### Build the Container
+From the project root, build the image:
 
 ```
+docker build --tag microbert .
+```
+
+### Run the Container
+Run the container and mount your local `data/` directory into the container at `/analysis/data`:
+
+```
+docker run -d --rm \
+  --name microbert \
+  -p 3100:3100 \
+  -v "$(pwd)/data:/analysis/data" \
+  -e PYTHONPATH=/analysis \
+  microbert-test
+ ```
+This ensures the container has access to the data directory while keeping your application code inside the image.
+
+### Running with GPU Support
+If your host has CUDA and the NVIDIA Container Toolkit installed, enable GPU usage:
+```
+sudo docker run -d --rm \
+  --gpus all \
+  --name microbert \
+  -p 3100:3100 \
+  -v "$(pwd)/data:/analysis/data" \
+  -e PYTHONPATH=/analysis \
+  microbert-test
+```
+- [CUDA Installation Guide (Linux)](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)  
+- [NVIDIA Container Toolkit Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)  
+
+### Test Sequences
+To run evaluate sequences from a running container:
+```
+docker exec -it microbert ./analysis/experiment/test_sequences.py --input-path INPUT_FASTA_FILE
+```
+#### Inference Arguments
+
+| Argument            | Description                                                                                   |
+|---------------------|-----------------------------------------------------------------------------------------------|
+| `--base-model-name` | Name of the trained GLM to run inference (default: `LongSafari/hyenadna-large-1m-seqlen-hf`)  |
+| `--input-path`      | Path to the input FASTA/FASTQ file (`.fa` / `.fq`, optionally compressed with `.gz`)          |
+| `--output-path`     | Path where predictions will be saved as a JSON file                                           |
+| `--use-gpu`         | Optional flag to enable GPU inference if available                                            |
+| `--batch-size`      | Number of sequences per batch (default: `256`)                                                |
+| `--top-k`           | Number of top predictions per label to return (default: `5`)                                  |
+| `--threshold`       | Minimum probability required to include a prediction (default: `0.2`)                         |
 
 
 ## Obtaining Class Metrics
@@ -232,7 +425,7 @@ Evaluation metrics per individual class can be generated by running the script
 
 Example usage: 
 ```
-parent_dir = "/home/apluser/analysis/analysis/experiment/RUN_DIR"
+parent_dir = "/home/apluser/analysis/analysis/experiment/runs/bertax/full/"
 generator = MetricsGenerator(None)
 generator.process_multiple_models(parent_dir)
 ```
@@ -243,11 +436,3 @@ Additional features of the class:
 - Identifying the correlation between F1 score and support.
 - Generating a confusion matrix.
 - Calculating the Jaccard similarity between the predictions of each model in the parent_dir.
-
-### Triton Issue
-It looks like DNABERT-2 is not compatible with the `triton` package [DNABERT ISSUE](https://github.com/MAGICS-LAB/DNABERT_2/issues/57).
-We got around this by explicitly uninstalling `pip uninstall triton`.
-
-### Acknowledgement
-
-This work was supported by funding from the U.S. Centers for Disease Control and Prevention (CDC) through the Office of Readiness and Response under Contract No. 75D30124C20202.

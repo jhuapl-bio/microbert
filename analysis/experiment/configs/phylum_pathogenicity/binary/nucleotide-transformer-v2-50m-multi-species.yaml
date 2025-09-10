@@ -1,0 +1,31 @@
+training_data: /home/apluser/analysis/analysis/process_phylum_pathogenicity/pathogenicity_out_split/on_phylum.950/down_80.950.csv
+testing_data: /home/apluser/analysis/analysis/process_phylum_pathogenicity/pathogenicity_out_split/on_phylum.950/down_20.950.csv
+validation_data: /home/apluser/analysis/analysis/process_phylum_pathogenicity/pathogenicity_out_split/on_phylum.950/down_20.950_val.csv
+
+train_iterable: True
+num_rows_iterable: 85978561
+use_class_weights: True
+
+labels:
+- pathogenicity
+
+sequence_column: Sequence
+
+data_processor_path: /home/apluser/analysis/analysis/process_phylum_pathogenicity/pathogenicity_out_split
+
+model_type: NT
+tokenizer_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+base_model_name: InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
+train_batch_size: 50
+eval_batch_size: 100
+learning_rate: 0.0007527411234382662 # 0.00018818528085956656 * 4
+epochs: 5
+multi_gpu_count: 8
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+experiment_name: phylum_pathogenicity/binary
+
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/phylum_pathogenicity/binary/nucleotide-transformer-v2-50m-multi-species/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/phylum_pathogenicity/binary/nucleotide-transformer-v2-50m-multi-species/test_results/tokenized_testing_data

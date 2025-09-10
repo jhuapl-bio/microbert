@@ -1,0 +1,32 @@
+training_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_train.csv
+validation_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_val.csv
+testing_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_test.csv
+
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/nucl_gb/hyenadna-large-1m-seqlen-hf/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/nucl_gb/hyenadna-large-1m-seqlen-hf/test_results/tokenized_testing_data
+
+sequence_column: representative_sequence
+train_iterable: True
+num_rows_iterable: 155725641
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+- species
+
+multi_gpu_count: 2 # testing batch_size
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-large-1m-seqlen-hf
+base_model_name: LongSafari/hyenadna-large-1m-seqlen-hf
+train_batch_size: 256
+learning_rate: 0.0004
+eval_batch_size: 128
+warmup_ratio: 0.05
+weight_decay: 0.01
+bf16: True
+epochs: 1
+
+# Directories
+data_processor_path: /home/apluser/analysis/analysis/process_taxonomy
+data_processor_filename: data_processor.pkl
+experiment_name: taxonomy/nucl_gb/batch_size

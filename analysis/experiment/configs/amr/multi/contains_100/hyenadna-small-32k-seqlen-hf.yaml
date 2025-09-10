@@ -1,0 +1,39 @@
+# training_data: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split/train_process.csv
+# testing_data: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split/test_process.csv
+# validation_data: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split/val_process.csv
+
+testing_data: /home/apluser/analysis/analysis/process_amr_multiclass/input/test_amr_files/multiclass_POS_amr_context_100.tsv
+testing_name: multi_100
+new_test_run: true
+test_metrics_dir: /home/apluser/analysis/analysis/experiment/runs/amr/multi/contains_100/hyena_small
+
+train_iterable: True
+use_class_weights: True
+
+labels:
+- AMR
+
+sequence_column: Sequence
+
+
+data_processor_path: /home/apluser/analysis/analysis/process_amr_multiclass/amr_multi_out_split
+experiment_name: amr/multi
+
+model_type: HYENA
+tokenizer_name: LongSafari/hyenadna-small-32k-seqlen-hf
+base_model_name: LongSafari/hyenadna-small-32k-seqlen-hf
+train_batch_size: 750
+eval_batch_size: 20
+learning_rate: 0.002260675046825702 # 0.00028258438085321274 * 8
+epochs: 5
+
+
+# multi_gpu_count: 8
+# experiment_name: amr/multi_100
+
+weight_decay:  0.01
+warmup_ratio: 0.05
+
+
+# tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/amr/multi/hyenadna-small-32k-seqlen-hf/tokenized_validation_data
+# tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/amr/multi/hyenadna-small-32k-seqlen-hf/test_results/tokenized_testing_data

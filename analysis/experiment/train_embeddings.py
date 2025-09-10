@@ -1,22 +1,21 @@
 # © 2024-2025 The Johns Hopkins University Applied Physics Laboratory LLC
 
+import time
 import os
 import gc
 import h5py
+import pandas as pd
 import numpy as np
 import torch
 from argparse import ArgumentParser
 from torch import nn
 from tqdm import tqdm
-from datasets import Dataset
+from datasets import Dataset, IterableDataset
 from transformers import AutoTokenizer, DataCollatorWithPadding
 
 from analysis.experiment.utils.config import Config, CONFIG_DIR
 from analysis.experiment.utils.train_logger import add_file_handler, logger
-from analysis.experiment.process.hierarchical_processor import HierarchicalDataProcessor
-from analysis.experiment.process.classification_processor import (
-    ClassificationDataProcessor,
-)
+from analysis.experiment.utils.data_processor import DataProcessor, DataTokenizer
 from analysis.experiment.models.embedding_model import GenomicEmbeddingModel
 from analysis.experiment.utils.train_utils import (
     load_dataset_if_available,
@@ -176,118 +175,293 @@ def resume_embedding_extraction(
         )
 
 
-def main(config: Config):
-    # 1) Setup logger / config
-    training = bool(config.training_data and os.path.exists(config.training_data))
-    testing = bool(config.testing_data and os.path.exists(config.testing_data))
-    validation = bool(config.validation_data and os.path.exists(config.validation_data))
+def skip_iterator(iterable, n_skip):
+    """
+    Skip the first `n_skip` items from an iterable.
+    """
+    for i, item in enumerate(iterable):
+        if i >= n_skip:
+            yield item
 
+
+def resume_embedding_extraction_iterable(
+    h5_path: str,
+    group_name: str,
+    model: nn.Module,
+    dataset: IterableDataset,
+    device: torch.device,
+    batch_size: int,
+    tokenizer,
+):
+    """
+    Supports embedding extraction from a HuggingFace IterableDataset.
+    Resumes from last written index in HDF5 without assuming dataset length or indexing.
+    """
+    if dataset is None:
+        logger.info(f"No dataset for group '{group_name}', skipping.")
+        return
+
+    collator = DataCollatorWithPadding(tokenizer)
+
+    with h5py.File(h5_path, "a") as f:
+        # Setup group and tracking
+        if group_name not in f:
+            grp = f.create_group(group_name)
+            grp.attrs["n_processed"] = 0
+        else:
+            grp = f[group_name]
+            if "n_processed" not in grp.attrs:
+                grp.attrs["n_processed"] = 0
+
+        n_already_processed = grp.attrs["n_processed"]
+        logger.info(
+            f"Resuming from sample {n_already_processed} in group '{group_name}'."
+        )
+
+        # Prepare HDF5 datasets
+        dset_emb = grp.get("embeddings", None)
+        dset_lbl = grp.get("labels", None)
+        current_offset = n_already_processed
+
+        # Wrap dataset with skip logic
+        dataloader = torch.utils.data.DataLoader(
+            skip_iterator(dataset, n_already_processed),
+            batch_size=batch_size,
+            collate_fn=collator,
+        )
+
+        for batch_data in tqdm(dataloader, desc=f"Extracting {group_name}"):
+            input_ids = batch_data["input_ids"].to(device)
+            attention_mask = batch_data["attention_mask"].to(device)
+            labels = batch_data["labels"]
+
+            with torch.no_grad():
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                embeddings = outputs["embedding"].cpu().numpy()
+
+            labels = labels.cpu().numpy()
+            bs = embeddings.shape[0]
+
+            # Create datasets if needed
+            if dset_emb is None:
+                embed_dim = embeddings.shape[1]
+                dset_emb = grp.create_dataset(
+                    "embeddings",
+                    shape=(0, embed_dim),
+                    maxshape=(None, embed_dim),
+                    dtype=np.float32,
+                    chunks=(min(512, bs), embed_dim),
+                    compression=None,
+                )
+
+            if dset_lbl is None:
+                label_dim = labels.shape[1] if len(labels.shape) > 1 else 1
+                dset_lbl = grp.create_dataset(
+                    "labels",
+                    shape=(0, label_dim),
+                    maxshape=(None, label_dim),
+                    dtype=labels.dtype,
+                    chunks=(min(512, bs), label_dim),
+                    compression=None,
+                )
+
+            # Resize and write to HDF5
+            new_size = current_offset + bs
+            dset_emb.resize((new_size, dset_emb.shape[1]))
+            dset_lbl.resize(
+                (new_size, dset_lbl.shape[1] if len(labels.shape) > 1 else 1)
+            )
+
+            if (
+                len(labels.shape) == 1
+                and len(dset_lbl.shape) == 2
+                and dset_lbl.shape[1] == 1
+            ):
+                dset_lbl[current_offset:new_size, 0] = labels
+            else:
+                dset_lbl[current_offset:new_size, ...] = labels
+
+            dset_emb[current_offset:new_size, :] = embeddings
+
+            current_offset = new_size
+            grp.attrs["n_processed"] = current_offset
+
+        logger.info(
+            f"Finished writing {group_name} embeddings. Total processed: {current_offset}."
+        )
+
+
+def main(config: Config):
+    # Determine run modes based on available datasets and their paths
+    training = bool(
+        config.training_data and os.path.exists(config.training_data)
+    )  # Check if training data exists
+    validation = bool(
+        config.validation_data and os.path.exists(config.validation_data)
+    )  # Check if validation data exists
+    testing = bool(
+        config.testing_data and os.path.exists(config.testing_data)
+    )  # Check if testing data exists
+
+    # If no training is specified, ensure testing is enabled for evaluation, else raise Exception
     if not training and not testing:
-        raise ValueError("No training or testing mode is enabled.")
+        raise ValueError(
+            "No training or testing mode is enabled. Provide valid training data for training or testing data for evaluation."
+        )
 
     log_filename = "train" if training else "test"
-    add_file_handler(logger, config.save_dir, log_filename)
-    logger.info(f"Logger '{log_filename}' initialized. Logs -> {config.save_dir}")
 
-    # 2) Load tokenizer
+    if bool(config.new_test_run):
+        add_file_handler(logger, config.test_metrics_dir, log_filename)
+        logger.info(
+            f"Logger {log_filename} initialized. Logs will be saved to {config.new_test_run}"
+        )
+    else:
+        add_file_handler(logger, config.save_dir, log_filename)
+        logger.info(
+            f"Logger {log_filename} initialized. Logs will be saved to {config.save_dir}"
+        )
+
+    logger.info(f"Training: {training}, Validation: {validation}, Testing: {testing}")
+
+    # initializing data processor
+    start_time = time.time()
+    data_processor = DataProcessor(
+        sequence_column=config.sequence_column,
+        labels=config.labels,
+        save_file=config.data_processor_filename,
+    )
+    data_processor_load_time = time.time() - start_time
+    # Must have a data processor already fit ina valid directory specified in config
+    data_processor.load_processor(config.data_processor_path)
+    logger.info("Data Processor initialized in %.2f seconds.", data_processor_load_time)
+
+    # Load the tokenizer
+    start_time = time.time()
     if "GenomeOcean" in config.base_model_name:
         tokenizer = AutoTokenizer.from_pretrained(
-            config.base_model_name, trust_remote_code=True, padding_side="left"
+            config.base_model_name,
+            trust_remote_code=True,
+            padding_side="left",  # mistral
         )
     else:
         tokenizer = AutoTokenizer.from_pretrained(
             config.base_model_name, trust_remote_code=True
         )
 
-    # 3) Setup data processor
-    if config.classification:
-        data_processor = ClassificationDataProcessor(
-            tokenizer=tokenizer,
-            tokenizer_kwargs=config.tokenizer_kwargs,
-            sequence_column=config.sequence_column,
-            label_column=config.label_column,
-            save_file=config.data_processor_filename,
-        )
-    else:
-        data_processor = HierarchicalDataProcessor(
-            tokenizer=tokenizer,
-            tokenizer_kwargs=config.tokenizer_kwargs,
-            sequence_column=config.sequence_column,
-            taxonomic_ranks=config.taxonomic_ranks,
-            save_file=config.data_processor_filename,
-        )
+    tokenizer_load_time = time.time() - start_time
+    logger.info("Tokenizer loaded in %.2f seconds.", tokenizer_load_time)
 
-    # 4) Load or create tokenized datasets
-    train_dataset = load_dataset_if_available(
+    # initializing data tokenizer
+    start_time = time.time()
+    data_tokenizer = DataTokenizer(
+        tokenizer=tokenizer,
+        tokenizer_kwargs=config.tokenizer_kwargs,
+        sequence_column=config.sequence_column,
+        label_columns=[f"label_level_{i}" for i in config.labels],
+    )
+    data_tokenizer_load_time = time.time() - start_time
+    logger.info("Data Tokenizer initialized in %.2f seconds.", data_tokenizer_load_time)
+
+    # Load tokenized datasets from disk if they exist
+    tokenized_training_data = load_dataset_if_available(
         config.tokenized_training_data, "training"
     )
-    val_dataset = load_dataset_if_available(
+    tokenized_validation_data = load_dataset_if_available(
         config.tokenized_validation_data, "validation"
     )
-    test_dataset = load_dataset_if_available(config.tokenized_testing_data, "testing")
+    tokenized_testing_data = load_dataset_if_available(
+        config.tokenized_testing_data, "testing"
+    )
 
-    create_training_data = training and train_dataset is None
-    create_validation_data = validation and val_dataset is None
-    create_testing_data = testing and test_dataset is None
-    
-    # create training data if required
-    if create_training_data:
-        # Encode the full training dataset and store labels for splitting later
-        hf_dataset_labels = data_processor.fit_encoder(
-            config.training_data, config.data_processor_path
+    # Define batch size once
+    BATCH_SIZE = 100_000
+
+    # Determine if we need to create tokenized datasets
+    create_training_data = training and tokenized_training_data is None
+    create_validation_data = validation and tokenized_validation_data is None
+    create_testing_data = testing and tokenized_testing_data is None
+
+    # === Iterable Training Dataset ===
+    if create_training_data and bool(config.train_iterable):
+        logger.info("Using IterableDataset for training.")
+        tokenized_training_data = data_tokenizer.tokenize_iterable_dataset_from_file(
+            config.training_data
         )
-        # Handle cases for validation and testing datasets
+
+        if create_validation_data:
+            val_df = pd.read_csv(config.validation_data)
+            tokenized_validation_data = data_tokenizer.tokenize_dataset_from_df(
+                val_df, batch_size=BATCH_SIZE
+            )
+            save_dataset(
+                tokenized_validation_data,
+                config.tokenized_validation_data,
+                "validation",
+            )
+
+        if create_testing_data:
+            test_df = pd.read_csv(config.testing_data)
+            tokenized_testing_data = data_tokenizer.tokenize_dataset_from_df(
+                test_df, batch_size=BATCH_SIZE
+            )
+            save_dataset(
+                tokenized_testing_data, config.tokenized_testing_data, "testing"
+            )
+
+    # === Non-Iterable Training Dataset ===
+    elif create_training_data:
+        logger.info("Creating training dataset from file (non-iterable).")
+        train_df = pd.read_csv(config.training_data)
+
         if create_validation_data and create_testing_data:
-            # Use predefined validation and testing datasets
-            val_dataset = data_processor.apply_encoder(config.validation_data)
-            test_dataset = data_processor.apply_encoder(config.testing_data)
+            val_df = pd.read_csv(config.validation_data)
+            test_df = pd.read_csv(config.testing_data)
         elif not create_validation_data and create_testing_data:
-            # Split training data into train/val (90% train, 10% val) and use predefined testing dataset
-            train_val_split = dataset_split(dataset=hf_dataset_labels, test_size=0.1, config=config)
-            train_dataset, val_dataset = (
-                train_val_split["train"],
-                train_val_split["test"],
-            )
-            test_dataset = data_processor.apply_encoder(config.testing_data)
+            train_df, val_df = dataset_split(df=train_df, test_size=0.1, config=config)
+            test_df = pd.read_csv(config.testing_data)
         elif create_validation_data and not create_testing_data:
-            # Use predefined validation dataset and split training data into train/test (90% train, 10% test)
-            val_dataset = data_processor.apply_encoder(config.validation_data)
-            train_test_split = dataset_split(dataset=hf_dataset_labels, test_size=0.1, config=config)
-            train_dataset, test_dataset = (
-                train_test_split["train"],
-                train_test_split["test"],
-            )
+            val_df = pd.read_csv(config.validation_data)
+            train_df, test_df = dataset_split(df=train_df, test_size=0.1, config=config)
         else:
-            # Perform an 80/10/10 split for train/val/test when no predefined validation or testing datasets are provided
-            train_testval_split = dataset_split(dataset=hf_dataset_labels, test_size=0.2, config=config) # Split 80% train, 20% test+val
-            train_dataset, testval_dataset = (
-                train_testval_split["train"],
-                train_testval_split["test"],
+            train_df, testval_df = dataset_split(
+                df=train_df, test_size=0.2, config=config
             )
-            testval_split = dataset_split(dataset=testval_dataset, test_size=0.5, config=config)  # Split remaining 20% into 10% val, 10% test
-            val_dataset, test_dataset = testval_split["train"], testval_split["test"]
+            val_df, test_df = dataset_split(df=testval_df, test_size=0.5, config=config)
 
+        tokenized_training_data = data_tokenizer.tokenize_dataset_from_df(
+            train_df, batch_size=BATCH_SIZE
+        )
+        save_dataset(
+            tokenized_training_data, config.tokenized_training_data, "training"
+        )
 
-        # Remove label columns from datasets
-        label_cols_remove = data_processor.label_columns
-        train_dataset = train_dataset.remove_columns(label_cols_remove)
-        val_dataset = val_dataset.remove_columns(label_cols_remove)
-        test_dataset = test_dataset.remove_columns(label_cols_remove)
+        if create_validation_data:
+            tokenized_validation_data = data_tokenizer.tokenize_dataset_from_df(
+                val_df, batch_size=BATCH_SIZE
+            )
+            save_dataset(
+                tokenized_validation_data,
+                config.tokenized_validation_data,
+                "validation",
+            )
 
-        # Save off datasets and log sizes of created datasets for debugging and confirmation
-        save_dataset(train_dataset, config.tokenized_training_data, "training")
-        save_dataset(val_dataset, config.tokenized_validation_data, "validation")
-        save_dataset(test_dataset, config.tokenized_testing_data, "testing")
+        if create_testing_data:
+            tokenized_testing_data = data_tokenizer.tokenize_dataset_from_df(
+                test_df, batch_size=BATCH_SIZE
+            )
+            save_dataset(
+                tokenized_testing_data, config.tokenized_testing_data, "testing"
+            )
 
+    # === Only Testing Dataset Required ===
     elif create_testing_data:
-        # Load existing data processor and apply it to the test dataset for evaluation
-        data_processor.load_processor(config.data_processor_path)
-        test_dataset = data_processor.apply_encoder(config.testing_data)
-        test_dataset = test_dataset.remove_columns(label_cols_remove)
-        save_dataset(test_dataset, config.tokenized_testing_data, "testing")
-
-    else:
-        data_processor.load_processor(config.data_processor_path)
+        logger.info("Creating only testing dataset.")
+        test_df = pd.read_csv(config.testing_data)
+        tokenized_testing_data = data_tokenizer.tokenize_dataset_from_df(
+            test_df, batch_size=BATCH_SIZE
+        )
+        save_dataset(tokenized_testing_data, config.tokenized_testing_data, "testing")
 
     # 5) Build model
     model = GenomicEmbeddingModel(config.base_model_name)
@@ -318,12 +492,12 @@ def main(config: Config):
     logger.info(
         f"Starting embedding extraction. Effective batch size: {effective_batch_size}"
     )
-    if train_dataset is not None:
+    if not bool(config.train_iterable) and tokenized_training_data is not None:
         resume_embedding_extraction(
             h5_path=h5_checkpoint_path,
             group_name="train",
             model=model,
-            dataset=train_dataset,
+            dataset=tokenized_training_data,
             device=device,
             batch_size=effective_batch_size,
             tokenizer=tokenizer,
@@ -333,12 +507,27 @@ def main(config: Config):
         print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
         print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
 
-    if val_dataset is not None:
+    elif bool(config.train_iterable):
+        resume_embedding_extraction_iterable(
+            h5_path=h5_checkpoint_path,
+            group_name="train",
+            model=model,
+            dataset=tokenized_training_data,
+            device=device,
+            batch_size=effective_batch_size,
+            tokenizer=tokenizer,
+        )
+        gc.collect()
+        torch.cuda.empty_cache()
+        print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
+        print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
+
+    if tokenized_validation_data is not None:
         resume_embedding_extraction(
             h5_path=h5_checkpoint_path,
             group_name="val",
             model=model,
-            dataset=val_dataset,
+            dataset=tokenized_validation_data,
             device=device,
             batch_size=effective_batch_size,
             tokenizer=tokenizer,
@@ -348,12 +537,12 @@ def main(config: Config):
         print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
         print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
 
-    if test_dataset is not None:
+    if tokenized_testing_data is not None:
         resume_embedding_extraction(
             h5_path=h5_checkpoint_path,
             group_name="test",
             model=model,
-            dataset=test_dataset,
+            dataset=tokenized_testing_data,
             device=device,
             batch_size=effective_batch_size,
             tokenizer=tokenizer,
@@ -374,7 +563,7 @@ if __name__ == "__main__":
         "config_file",
         type=str,
         help="Path to the YAML configuration file.",
-        default="bertax/sample/train_embeddings.yaml",
+        default="sample/train_embeddings.yaml",
         nargs="?",
     )
     args = parser.parse_args()

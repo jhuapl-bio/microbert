@@ -1,7 +1,7 @@
 # © 2024-2025 The Johns Hopkins University Applied Physics Laboratory LLC
 
+# Available models allowed and tested in pipeline
 
-# Constants for models to be used in experiment runs
 MODELS = {
     "NT": [
         "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
@@ -25,15 +25,3 @@ MODELS = {
         "pGenomeOcean/GenomeOcean-500M",
     ],
 }
-
-# Constants for available taxonomic ranks
-TAX_RANKS = [
-    "superkingdom",
-    "kingdom",
-    "phylum",
-    "class",
-    "family",
-    "order",
-    "genus",
-    "species",
-]

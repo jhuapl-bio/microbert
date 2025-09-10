@@ -1,0 +1,31 @@
+training_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_train_chunks.csv
+validation_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_val_chunks.csv
+testing_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_test_chunks.csv
+
+# already tokenized test/val sets
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/nucl_gb/nucleotide-transformer-v2-50m-multi-species/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/nucl_gb/nucleotide-transformer-v2-50m-multi-species/test_results/tokenized_testing_data
+
+sequence_column: representative_sequence
+train_iterable: True
+num_rows_iterable: 10000
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+- family
+- species
+
+# multi_gpu_count: 1 # use all 8 GPUs?
+train_batch_size: 256
+learning_rate: 0.0004 # adjust
+eval_batch_size: 256
+warmup_ratio: 0.05
+weight_decay: 0.01
+bf16: True
+epochs: 1
+
+# Directories
+data_processor_path: /home/apluser/analysis/analysis/process_taxonomy
+data_processor_filename: data_processor_chunks.pkl
+experiment_name: taxonomy/nucl_gb

@@ -1,0 +1,23 @@
+training_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/train_process_sample.csv
+validation_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/val_process_sample.csv
+testing_data: /home/apluser/analysis/analysis/process_bertax/bertax_out_split/test_process_sample.csv
+
+labels: 
+- superkingdom
+- phylum
+- genus
+
+epochs: 1
+train_batch_size: 128
+eval_batch_size: 128
+
+predictions_batch: 100
+
+save_probabilities: False
+
+
+# Directories
+data_processor_path: /home/apluser/analysis/analysis/process_bertax/bertax_out_split
+data_processor_filename: data_processor_sample.pkl
+experiment_name: sample/train
+

@@ -1,0 +1,31 @@
+training_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_train_chunks_sample.csv
+validation_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_val_chunks_sample.csv
+testing_data: /home/apluser/analysis/analysis/process_taxonomy/nucl_gb_test_chunks_sample.csv
+
+
+tokenized_training_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/optimization_dnabert/DNABERT-2-117M/tokenized_validation_data
+tokenized_validation_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/optimization_dnabert/DNABERT-2-117M/tokenized_validation_data
+tokenized_testing_data: /home/apluser/analysis/analysis/experiment/runs/taxonomy/optimization_dnabert/DNABERT-2-117M/tokenized_testing_data
+
+model_type: DNABERT
+tokenizer_name: zhihan1996/DNABERT-2-117M
+base_model_name: zhihan1996/DNABERT-2-117M
+
+sequence_column: representative_sequence
+taxonomic_ranks:
+- superkingdom
+- phylum
+- genus
+
+train_batch_size: 512
+learning_rate: 0.00002
+eval_batch_size: 512
+warmup_ratio: 0.05
+weight_decay: 0.01
+bf16: True
+epochs: 1
+
+# Directories
+data_processor_path: /home/apluser/analysis/analysis/process_taxonomy
+data_processor_filename: data_processor_chunks_sample.pkl
+experiment_name: taxonomy/optimization_dnabert/dnabert_lr_test
