@@ -6,13 +6,7 @@ MicrobeRT: Leveraging Language Models for Analysis of Metagenomic Sequencing Dat
 
 This repository contains a comprehensive and configurable pipeline for fine-tuning pre-trained genomic language models (gLMs) on labels of interest such as taxonomic hierarchy and evaluating models and tracking experimental results. This work was supported by funding from the U.S. Centers for Disease Control and Prevention through the Office of Readiness and Response under Contract # 75D30124C20202.
 
-There are four primary training/testing scripts for fine-tuning and evaluating open-source genomic language models. 
-- **Generate Data** (`train_data.py`): Generates tokenized data for a given genomic language model
-- **Fine-tuning** (`train_model_multi_gpu.py`): Fine-tunes a genomic language model on a multiclass classification task of your choice (e.g. taxonomic classification), and evaluates the fine-tuned model on a test set of specification.  
-- **Generating Embeddings** (`train_embeddings.py`): Generates embeddings from a genomic language model. 
-- **Inference** (`test_sequences.py`): Generates predictions of a trained gLM on a set of test sequences. 
-
-# Setup Instructions
+# Setup and run from source code
 
 **Requirements:** 
 - Python>=3.11
@@ -52,28 +46,28 @@ from analysis.experiment.models.hierarchical_model import HierarchicalClassifica
 It looks like DNABERT-2 is not compatible with the `triton` package [DNABERT ISSUE](https://github.com/MAGICS-LAB/DNABERT_2/issues/57).
 We got around this by explicitly uninstalling `pip uninstall triton`.
 
-## Model Compatibility
+### Model Compatibility
 We have verified that the training and testing pipeline functions correctly with the following models, and the pipeline will raise a 
 
-### Nucleotide Transformer (NT)
+#### Nucleotide Transformer (NT)
 - [InstaDeepAI/nucleotide-transformer-v2-50m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-50m-multi-species)  
 - [InstaDeepAI/nucleotide-transformer-v2-100m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-100m-multi-species)  
 - [InstaDeepAI/nucleotide-transformer-v2-250m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-250m-multi-species)
 
-### DNABERT
+#### DNABERT
 - [zhihan1996/DNABERT-2-117M](https://huggingface.co/zhihan1996/DNABERT-2-117M)  
 - [zhihan1996/DNABERT-S](https://huggingface.co/zhihan1996/DNABERT-S)
 
-### HyenaDNA
+#### HyenaDNA
 - [LongSafari/hyenadna-large-1m-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-large-1m-seqlen-hf)  
 - [LongSafari/hyenadna-medium-450k-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-medium-450k-seqlen-hf)  
 - [LongSafari/hyenadna-medium-160k-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-medium-160k-seqlen-hf)  
 - [LongSafari/hyenadna-small-32k-seqlen-hf](https://huggingface.co/LongSafari/hyenadna-small-32k-seqlen-hf)
 
-### METAGENE
+#### METAGENE
 - [metagene-ai/METAGENE-1](https://huggingface.co/metagene-ai/METAGENE-1)
 
-### GenomeOcean
+#### GenomeOcean
 - [pGenomeOcean/GenomeOcean-4B](https://huggingface.co/pGenomeOcean/GenomeOcean-4B)  
 - [pGenomeOcean/GenomeOcean-100M](https://huggingface.co/pGenomeOcean/GenomeOcean-100M)  
 - [pGenomeOcean/GenomeOcean-500M](https://huggingface.co/pGenomeOcean/GenomeOcean-500M)
@@ -81,7 +75,13 @@ We have verified that the training and testing pipeline functions correctly with
 
 ## Scripts
 
-All the following scripts use a single parameter: the path to a config `yaml` file as an argument.  
+There are four primary training/testing scripts for fine-tuning and evaluating open-source genomic language models. 
+- **Generate Data** (`train_data.py`): Generates tokenized data for a given genomic language model
+- **Fine-tuning** (`train_model_multi_gpu.py`): Fine-tunes a genomic language model on a multiclass classification task of your choice (e.g. taxonomic classification), and evaluates the fine-tuned model on a test set of specification.  
+- **Generating Embeddings** (`train_embeddings.py`): Generates embeddings from a genomic language model. 
+- **Inference** (`test_sequences.py`): Generates predictions of a trained gLM on a set of test sequences. 
+
+Most scripts use a single parameter: the path to a config `yaml` file as an argument.  
 See the [Config](#config) and [Config Parameters](#config-parameters) sections for details.
 
 ### Data Tokenization
@@ -104,7 +104,7 @@ python ~/analysis/analysis/experiment/train_embeddings.py --config_path CONFIG_Y
 
 ### Batched Inference
 
-We provide a script to run batched taxonomic classification on input FASTA/FASTQ sequences using a trained genomic language model.  
+We provide a script to run batched classification on input FASTA/FASTQ sequences using a trained genomic language model.  
 The script loads a saved `DataProcessor`, model weights, and the base model tokenizer. It processes sequences in batches and outputs predictions per label, saving the results to a JSON file.
 
 ```
@@ -289,7 +289,7 @@ Use these parameters if using additional training methods such as Parameter-Effi
 
 ---
 
-## Configuration Tips
+### Configuration Tips
 
 - You **must** define either a training dataset path or a testing dataset path in the config `yaml` to ensure that training or evaluation mode is run. 
 - Make sure `experiment_dir` is writable (default is hardcoded to `~/analysis/analysis/experiment` in the class).
@@ -309,7 +309,7 @@ Use these parameters if using additional training methods such as Parameter-Effi
 - Label encoding and dataset tokenization are cached, and tokenized datasets are saved for faster reloads when rerunning the same training script. If you specify `tokenized_training_data` , `tokenized_validation_data`  and/or `tokenized_testing_data` parameters in the config, then it will use the datasets corresponding to those filepaths (directories) explicitly. Otherwise, it will check in the default location for these datasets if they exist, and load those in. If those also dont exist, it tokenizes from scratch and saves off in the default location.
 - If a model was trained in a previous run, subsequent runs will automatically resume from the last saved checkpoint—preemptibility is enabled to support seamless continuation of training.
 
-## Generated Directory Structure
+### Generated Directory Structure
 
 Once a config file is loaded and a train run is initiated, the following structure is created:
 
@@ -329,8 +329,28 @@ experiment/
             └── train_DATE_TIME_.log
 ```
 
-## Running from docker container
-Before starting the container, you must have a preconfigured /data directory on your host machine. This directory should follow the structure below:
+#### Obtaining Class Metrics
+Evaluation metrics per individual class can be generated by running the script
+`~/analysis/experiment/utils/metrics_generator.py`
+
+Example usage: 
+```
+parent_dir = "/home/apluser/analysis/analysis/experiment/runs/bertax/full/"
+generator = MetricsGenerator(None)
+generator.process_multiple_models(parent_dir)
+```
+
+This will generate a `class_metrics.csv` file in each model output directory, containing the F1 score, precision, recall, and support for each class with at least one example in the test set.
+
+Additional features of the class:
+- Identifying the correlation between F1 score and support.
+- Generating a confusion matrix.
+- Calculating the Jaccard similarity between the predictions of each model in the parent_dir.
+
+# Setup and run from Docker container
+
+Before starting the container, you must have a preconfigured /data directory on your host machine that contains the relevant data_processor file, tokenizer, and trained model weights. 
+This directory should follow the structure below:
 ```
 data/
 ├── InstaDeepAI__nucleotide-transformer-v2-50m-multi-species/
@@ -348,6 +368,7 @@ data/
 ├── input/
 ├── output/
 ```
+All of the above are available for download at [Hugging Face Directory](put hugging face link here)
 
 ### Directory Details
 - **`data/MODEL_NAME/base_model`**  
@@ -363,9 +384,9 @@ data/
 
 ### Supported Models
 Currently, batched inference is supported for the following base models:
-- `InstaDeepAI__nucleotide-transformer-v2-50m-multi-species`  
-- `LongSafari__hyenadna-large-1m-seqlen-hf`  
-- `zhihan1996__DNABERT-2-117M`  
+- `InstaDeepAI/nucleotide-transformer-v2-50m-multi-species`  
+- `LongSafari/hyenadna-large-1m-seqlen-hf`  
+- `zhihan1996/DNABERT-2-117M`  
 
 ### Build the Container
 From the project root, build the image:
@@ -417,22 +438,3 @@ docker exec -it microbert ./analysis/experiment/test_sequences.py --input-path I
 | `--batch-size`      | Number of sequences per batch (default: `256`)                                                |
 | `--top-k`           | Number of top predictions per label to return (default: `5`)                                  |
 | `--threshold`       | Minimum probability required to include a prediction (default: `0.2`)                         |
-
-
-## Obtaining Class Metrics
-Evaluation metrics per individual class can be generated by running the script
-`~/analysis/experiment/utils/metrics_generator.py`
-
-Example usage: 
-```
-parent_dir = "/home/apluser/analysis/analysis/experiment/runs/bertax/full/"
-generator = MetricsGenerator(None)
-generator.process_multiple_models(parent_dir)
-```
-
-This will generate a `class_metrics.csv` file in each model output directory, containing the F1 score, precision, recall, and support for each class with at least one example in the test set.
-
-Additional features of the class:
-- Identifying the correlation between F1 score and support.
-- Generating a confusion matrix.
-- Calculating the Jaccard similarity between the predictions of each model in the parent_dir.
