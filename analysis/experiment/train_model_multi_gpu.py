@@ -28,7 +28,6 @@ from analysis.experiment.utils.train_utils import (
     SafetensorsTrainer,
     EpochTimingCallback,
     LogMetricsCallback,
-    MemoryDebugCallback,
     count_csv_rows_fast,
     calculate_steps_per_epoch,
     calculate_max_steps,
@@ -361,8 +360,6 @@ def main(config: Config):
     )
     epoch_timing_callback = EpochTimingCallback(config.epochs_trained_path)
     log_metrics_callback = LogMetricsCallback()
-    memory_debug_callback = MemoryDebugCallback()
-
     custom_callbacks = [early_stopping_callback, epoch_timing_callback, log_metrics_callback]
     
     # Determine evaluation strategy based on whether training is enabled

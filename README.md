@@ -42,9 +42,10 @@ This installs `analysis` as a module that enables local imports, e.g.
 from analysis.experiment.models.hierarchical_model import HierarchicalClassificationModel
 ```
 
-### Triton Issue
-It looks like DNABERT-2 is not compatible with the `triton` package [DNABERT ISSUE](https://github.com/MAGICS-LAB/DNABERT_2/issues/57).
-We got around this by explicitly uninstalling `pip uninstall triton`.
+#### Triton / FlashAttention Compatibility
+DNABERT-2 currently has compatibility issues with the triton package when running on certain hardware, such as the NVIDIA H100: [related issue](https://github.com/MAGICS-LAB/DNABERT_2/issues/57)
+To work around this, we explicitly uninstalled Triton using: `pip uninstall triton`
+This issue did not occur when running on an NVIDIA A100.
 
 ### Model Compatibility
 We have verified that the training and testing pipeline functions correctly with the following models, and the pipeline will raise a 
@@ -104,30 +105,48 @@ python ~/analysis/analysis/experiment/train_embeddings.py --config_path CONFIG_Y
 
 ### Batched Inference
 
-We provide a script to run batched classification on input FASTA/FASTQ sequences using a trained genomic language model.  
-The script loads a saved `DataProcessor`, model weights, and the base model tokenizer. It processes sequences in batches and outputs predictions per label, saving the results to a JSON file.
-
+We provide a script to evaluate classifications on input FASTA/FASTQ sequences using a trained genomic language model.  
+The script loads a saved `DataProcessor`, model weights, and the base model tokenizer. 
+It processes sequences in batches and outputs predictions per label, returning and saving the results to an output JSON file.
 ```
 python /analysis/experiment/test_sequences.py \
-    --base-model-name <MODEL_NAME> \
     --input-path <INPUT_FASTA_FILE> \
     --output-path <OUTPUT_JSON_FILE> \
+    --model-dir <MODEL_DIR> \
     [--use-gpu] \
     --batch-size <BATCH_SIZE> \
     --top-k <TOP_K> \
     --threshold <THRESHOLD>
 ```
+#### Model download
+In order to use `test_sequences.py` you must have access to a `data_processor.pkl` file, the base model from Hugging Face, and trained model weights file.
+This must be organized with the following structure:
+```
+MODEL_DIR/
+  └── base_model/
+  └── data_processor/
+  └── model/
+```
+These files and models can be downloaded from [HuggingFace](https://huggingface.co/jhuapl-bio).
+This should be placed in an appropriate local directory whose path is referenced with the argument `--model-dir`.
+- **`MODEL_DIR/base_model`**  
+  Holds the base_model and tokenizer files necessary for preprocessing input sequences and loading fine-tuned model.  
+- **`MODEL_DIR/data_processor`**
+  Contains the data processor used to store and encode model inference labels.
+- **`MODEL_DIR/model`**  
+  Contains the trained model weight files (e.g., `model.safetensors`) that are loaded in for evaluating sequences.
+- 
 #### Inference Arguments
 
-| Argument            | Description                                                                                   |
-|---------------------|-----------------------------------------------------------------------------------------------|
-| `--base-model-name` | Name of the trained GLM to run inference (default: `LongSafari/hyenadna-large-1m-seqlen-hf`)  |
-| `--input-path`      | Path to the input FASTA/FASTQ file (`.fa` / `.fq`, optionally compressed with `.gz`)          |
-| `--output-path`     | Path where predictions will be saved as a JSON file                                           |
-| `--use-gpu`         | Optional flag to enable GPU inference if available                                            |
-| `--batch-size`      | Number of sequences per batch (default: `256`)                                                |
-| `--top-k`           | Number of top predictions per label to return (default: `5`)                                  |
-| `--threshold`       | Minimum probability required to include a prediction (default: `0.2`)                         |
+| Argument        | Description                                                                          |
+|-----------------|--------------------------------------------------------------------------------------|
+| `--input-path`  | Path to the input FASTA/FASTQ file (`.fa` / `.fq`, optionally compressed with `.gz`) |
+| `--output-path` | Path where predictions will be saved as a JSON file                                  |
+| `--model-dir`   | Directory where data processor, base model tokenizer, and trained model lives        |
+| `--use-gpu`     | Optional flag to enable GPU inference if available                                   |
+| `--batch-size`  | Number of sequences per batch (default: `256`)                                       |
+| `--top-k`       | Number of top predictions per label to return (default: `5`)                         |
+| `--threshold`   | Minimum probability required to include a prediction (default: `0.2`)                |
 
 #### Transfer Learning
 Additional scripts for training a downstream classification model (e.g. Random Forest or MLP) trained on model generated embeddings as features are contained in `~/analysis/analysis/experiment/transfer_learning`. 
@@ -137,9 +156,7 @@ Note this transfer learning pipeline for hierarchical classification uses the pa
 
 Before data can be tokenized and used for training with these scripts, it must first be label-encoded using a  
 `DataProcessor` object from `analysis.experiment.utils.data_processor.DataProcessor`.
-
-This preprocessing step is best performed in a separate script, which prepares the raw dataset and fits the label encoder.  
-
+This preprocessing step is best performed in a separate script, which prepares the raw dataset and fits the label encoder.
 Example preprocessing scripts can be found in:
 - `~/analysis/analysis/process_taxonomy`
 - `~/analysis/analysis/process_amr`
@@ -349,55 +366,32 @@ Additional features of the class:
 
 # Setup and run from Docker container
 
-Before starting the container, you must have a preconfigured /data directory on your host machine that contains the relevant data_processor file, tokenizer, and trained model weights. 
+Before starting the container, you must have a preconfigured model directory on your host machine that contains the relevant data_processor file, tokenizer, and trained model weights. 
 This directory should follow the structure below:
 ```
-data/
-├── InstaDeepAI__nucleotide-transformer-v2-50m-multi-species/
+MODEL_DIR/
   └── base_model/
   └── data_processor/
   └── model/
-├── LongSafari__hyenadna-large-1m-seqlen-hf/
-  └── base_model/
-  └── data_processor/
-  └── model/
-└── zhihan1996__DNABERT-2-117M/
-  └── base_model/
-  └── data_processor/
-  └── model/
-├── input/
-├── output/
 ```
-All of the above are available for download at [Hugging Face Directory](put hugging face link here)
+This type of directory is available for download at [HuggingFace](https://huggingface.co/jhuapl-bio)
 
 ### Directory Details
-- **`data/MODEL_NAME/base_model`**  
+- **`MODEL_DIR/base_model`**  
   Holds the base_model and tokenizer files necessary for preprocessing input sequences and loading fine-tuned model.  
-- **`data/MODEL_NAME/model`**  
-  Contains the trained model weight files (e.g., `model.safetensors`) that are loaded in for evaluating sequences. 
-- **`data/MODEL_NAME/data_processor`**  
-  Includes the data processor used to encode and process sequences
-- **`/data/input`**  
-  Directory to store sequence fasta files for inference  
-- **`/data/output`**  
-  Destination for inference results.  
-
-### Supported Models
-Currently, batched inference is supported for the following base models:
-- `InstaDeepAI/nucleotide-transformer-v2-50m-multi-species`  
-- `LongSafari/hyenadna-large-1m-seqlen-hf`  
-- `zhihan1996/DNABERT-2-117M`  
+- **`MODEL_DIR/data_processor`**
+  Contains the data processor used to store and encode model inference labels.
+- **`MODEL_DIR/model`**  
+  Contains the trained model weight files (e.g., `model.safetensors`) that are loaded in for evaluating sequences.
 
 ### Build the Container
 From the project root, build the image:
-
 ```
 docker build --tag microbert .
 ```
 
 ### Run the Container
 Run the container and mount your local `data/` directory into the container at `/analysis/data`:
-
 ```
 docker run -d --rm \
   --name microbert \
@@ -409,32 +403,17 @@ docker run -d --rm \
 This ensures the container has access to the data directory while keeping your application code inside the image.
 
 ### Running with GPU Support
-If your host has CUDA and the NVIDIA Container Toolkit installed, enable GPU usage:
-```
-sudo docker run -d --rm \
-  --gpus all \
-  --name microbert \
-  -p 3100:3100 \
-  -v "$(pwd)/data:/analysis/data" \
-  -e PYTHONPATH=/analysis \
-  microbert-test
-```
+If your host has CUDA and the NVIDIA Container Toolkit installed, enable GPU usage with the flag `--gpus all`
+See the following for instruction details:
 - [CUDA Installation Guide (Linux)](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)  
 - [NVIDIA Container Toolkit Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)  
 
 ### Test Sequences
 To run evaluate sequences from a running container:
 ```
-docker exec -it microbert ./analysis/experiment/test_sequences.py --input-path INPUT_FASTA_FILE
+docker exec -it microbert ./analysis/experiment/test_sequences.py -i INPUT_FASTA_FILE -o OUTPUT_JSON_PATH -d MODEL_DIR
 ```
-#### Inference Arguments
-
-| Argument            | Description                                                                                   |
-|---------------------|-----------------------------------------------------------------------------------------------|
-| `--base-model-name` | Name of the trained GLM to run inference (default: `LongSafari/hyenadna-large-1m-seqlen-hf`)  |
-| `--input-path`      | Path to the input FASTA/FASTQ file (`.fa` / `.fq`, optionally compressed with `.gz`)          |
-| `--output-path`     | Path where predictions will be saved as a JSON file                                           |
-| `--use-gpu`         | Optional flag to enable GPU inference if available                                            |
-| `--batch-size`      | Number of sequences per batch (default: `256`)                                                |
-| `--top-k`           | Number of top predictions per label to return (default: `5`)                                  |
-| `--threshold`       | Minimum probability required to include a prediction (default: `0.2`)                         |
+e.g. 
+```
+docker exec -it microbert ./analysis/experiment/test_sequences.py -i data/input/test_sample_sub.fasta -o data/output/test.json -d data/LongSafari__hyenadna-large-1m-seqlen-hf
+```

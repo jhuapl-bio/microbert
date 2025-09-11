@@ -27,7 +27,7 @@ from analysis.experiment.utils.train_logger import logger
 def main(
     input_path: str,
     output_path: str,
-    base_model_name: str = "LongSafari/hyenadna-large-1m-seqlen-hf",
+    model_dir: str,
     device: str = "cpu",
     batch_size: int = 256,
     top_k: int = 5,
@@ -40,24 +40,21 @@ def main(
     Args:
         input_path (str): Path to the input FASTA/FASTQ file (.fa/.fq, optionally .gz).
         output_path (str): Path to the output probabilities json file.
-        base_model_name (str): Name of the fine-tuned genomic language model to use.
+        model_dir (str): Path to the directory containing model files.
         device (str): either cpu or cuda device to run evaluations. Defaults to cpu
         batch_size (int): Number of sequences to process per batch, defaults to 256
         top_k (int): Number of top predictions to extract per label. Defaults to top 5.
-        threshold (float): Only return predicted labels with probability > threshold
+        threshold (float): Only return predicted labels with probability > threshold. Defaults to 0.2.
 
     Returns:
         Writes a list with predictions per sequence
     """
     # model specifications
-    logger.info(f"model used: {base_model_name}")
-    base_model_name = base_model_name.replace('/', '__')
-
-    # data processor specifications
     data_processor_filename = 'data_processor.pkl'
-    data_processor_dir = Path("data") / base_model_name / "data_processor"
     metadata_filename = 'metadata.json'
-    metadata_path = Path("data") / base_model_name / "data_processor" / metadata_filename
+
+    data_processor_dir = Path(model_dir) / "data_processor"
+    metadata_path = Path(model_dir) / "data_processor" / metadata_filename
     with open(metadata_path, "r") as f:
         metadata = json.load(f)
 
@@ -65,7 +62,6 @@ def main(
     sequence_column = metadata["sequence_column"]
     labels = metadata["labels"]
 
-    logger.info(f"Using data processor {data_processor_dir}/{data_processor_filename}")
     logger.info(f"sequence column: {sequence_column}")
     logger.info(f"labels: {labels}")
     logger.info(f"Using device: {device}")
@@ -80,13 +76,22 @@ def main(
         save_file=data_processor_filename,
     )
     data_processor.load_processor(data_processor_dir)
-    
-    num_labels = data_processor.num_labels
+
+    # loop through data processor labels to get order of labels for model inference
+    data_processor_labels = dict(zip(data_processor.labels, data_processor.num_labels))
+    num_labels = []
+    for label in labels:
+        if label not in data_processor_labels:
+            raise ValueError(
+                f"Label {label} not found in encoded data processor labels"
+            )
+        num_labels.append(data_processor_labels[label])
+
     class_weights = data_processor.class_weights
 
     # Load data tokenizer from local download
     local_base_model_dir = (
-        Path("data") / base_model_name / "base_model"
+        Path(model_dir) / "base_model"
     ).as_posix()
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -94,16 +99,12 @@ def main(
         trust_remote_code=True,
         local_files_only=True,
     )
-    logger.info(f"Instantiated tokenizer for {base_model_name}")
 
     # Load safetensors weights
     trained_model_path = (
-        Path("data") / base_model_name / "model" / "model.safetensors"
+        Path(model_dir) / "model" / "model.safetensors"
     ).as_posix()
 
-    # TODO Fix head layer swap
-    if "nucleotide-transformer-v2" in base_model_name:
-        num_labels[3], num_labels[2] = num_labels[2], num_labels[3]
     model = HierarchicalClassificationModel(local_base_model_dir, num_labels, class_weights)
     state_dict = load_file(trained_model_path)
     logger.info(f"Loading model weights from {trained_model_path}...")
@@ -196,26 +197,23 @@ def parse_args():
         "-i",
         "--input-path",
         type=str,
-        default="data/input/test_sample_sub.fasta",
+        required=True,
         help="Path to input FASTA file",
     )
-
     parser.add_argument(
         "-o",
         "--output-path",
         type=str,
-        default="data/output/test_sample_sub_results.json",
+        required=True,
         help="Path to write JSON results",
     )
-
     parser.add_argument(
-        "-m",
-        "--base-model-name",
+        "-d",
+        "--model-dir",
         type=str,
-        default="LongSafari/hyenadna-large-1m-seqlen-hf",
-        help="Base model to use",
+        required=True,
+        help="Path to the directory containing relevant model files.",
     )
-
     parser.add_argument(
         "--use-gpu", action="store_true", help="Enable GPU if available"
     )
@@ -244,7 +242,7 @@ if __name__ == "__main__":
     results = main(
         input_path=args.input_path,
         output_path=args.output_path,
-        base_model_name=args.base_model_name,
+        model_dir=args.model_dir,
         device=device,
         batch_size=args.batch_size,
         top_k=args.top_k,
